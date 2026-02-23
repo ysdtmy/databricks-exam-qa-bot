@@ -15,8 +15,8 @@
 # COMMAND ----------
 
 # 設定 - 01_crawl_docs.py と同じ値を指定してください
-CATALOG_NAME = "main"
-SCHEMA_NAME = "exam_bot"
+CATALOG_NAME = "exam_qa_bot"
+SCHEMA_NAME = "default"
 TABLE_NAME = "docs_chunks"
 
 FULL_TABLE_NAME = f"{CATALOG_NAME}.{SCHEMA_NAME}.{TABLE_NAME}"

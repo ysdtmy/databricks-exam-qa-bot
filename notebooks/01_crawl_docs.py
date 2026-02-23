@@ -29,7 +29,7 @@ CHUNK_SIZE = 500  # 文字数
 CHUNK_OVERLAP = 100  # オーバーラップ文字数
 
 # クロール設定
-MAX_PAGES_PER_SEED = 10  # 各シード URL から辿るサブページの最大数
+MAX_PAGES_PER_SEED = 20  # 各シード URL から辿るサブページの最大数
 CRAWL_DELAY = 0.5  # リクエスト間隔（秒）
 
 # COMMAND ----------
@@ -59,36 +59,60 @@ CRAWL_SEEDS = {
         "https://docs.databricks.com/en/getting-started/concepts.html",
         "https://docs.databricks.com/en/introduction/index.html",
         "https://docs.databricks.com/en/compute/index.html",
+        "https://docs.databricks.com/en/compute/sql-warehouse/index.html",
         "https://docs.databricks.com/en/sql/index.html",
         "https://docs.databricks.com/en/repos/index.html",
+        "https://docs.databricks.com/en/notebooks/index.html",
+        "https://docs.databricks.com/en/dbfs/index.html",
     ],
     "Development & Ingestion": [
         "https://docs.databricks.com/en/delta/index.html",
+        "https://docs.databricks.com/en/delta/create-tables.html",
+        "https://docs.databricks.com/en/delta/merge.html",
+        "https://docs.databricks.com/en/delta/update.html",
+        "https://docs.databricks.com/en/delta/delete-on.html",
+        "https://docs.databricks.com/en/delta/history.html",
+        "https://docs.databricks.com/en/delta/time-travel.html",
         "https://docs.databricks.com/en/ingestion/auto-loader/index.html",
         "https://docs.databricks.com/en/ingestion/copy-into/index.html",
-        "https://docs.databricks.com/en/sql/language-manual/delta-create-table.html",
-        "https://docs.databricks.com/en/delta/merge.html",
         "https://docs.databricks.com/en/tables/multi-hop.html",
+        "https://docs.databricks.com/en/connect/external-systems/index.html",
     ],
     "Data Processing & Transformations": [
         "https://docs.databricks.com/en/spark/index.html",
         "https://docs.databricks.com/en/pyspark/index.html",
+        "https://docs.databricks.com/en/pyspark/basics.html",
         "https://docs.databricks.com/en/sql/language-manual/index.html",
+        "https://docs.databricks.com/en/sql/language-manual/sql-ref-syntax-qry-select.html",
         "https://docs.databricks.com/en/structured-streaming/index.html",
+        "https://docs.databricks.com/en/structured-streaming/triggers.html",
+        "https://docs.databricks.com/en/structured-streaming/watermarks.html",
         "https://docs.databricks.com/en/udf/index.html",
         "https://docs.databricks.com/en/spark/caching.html",
+        "https://docs.databricks.com/en/optimizations/index.html",
+        "https://docs.databricks.com/en/delta/data-skipping.html",
     ],
     "Productionizing Data Pipelines": [
         "https://docs.databricks.com/en/delta-live-tables/index.html",
+        "https://docs.databricks.com/en/delta-live-tables/tutorial.html",
+        "https://docs.databricks.com/en/delta-live-tables/updates.html",
+        "https://docs.databricks.com/en/delta-live-tables/observability.html",
         "https://docs.databricks.com/en/workflows/index.html",
         "https://docs.databricks.com/en/workflows/jobs/create-run-jobs.html",
+        "https://docs.databricks.com/en/workflows/jobs/schedule-jobs.html",
+        "https://docs.databricks.com/en/workflows/jobs/monitor-jobs.html",
+        "https://docs.databricks.com/en/jobs/index.html",
         "https://docs.databricks.com/en/jobs/schedule.html",
     ],
     "Data Governance & Quality": [
         "https://docs.databricks.com/en/data-governance/unity-catalog/index.html",
+        "https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/index.html",
+        "https://docs.databricks.com/en/data-governance/unity-catalog/create-catalogs.html",
+        "https://docs.databricks.com/en/data-governance/unity-catalog/create-schemas.html",
+        "https://docs.databricks.com/en/data-governance/unity-catalog/create-tables.html",
         "https://docs.databricks.com/en/tables/constraints.html",
         "https://docs.databricks.com/en/delta-live-tables/expectations.html",
-        "https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/index.html",
+        "https://docs.databricks.com/en/data-governance/index.html",
     ],
 }
 
