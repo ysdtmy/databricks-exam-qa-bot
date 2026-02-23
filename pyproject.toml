@@ -1,0 +1,10 @@
+[project]
+name = "databricks-sample-qa-bot"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "gradio>=6.6.0",
+    "requests>=2.32.5",
+]

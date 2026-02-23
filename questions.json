@@ -1,0 +1,250 @@
+[
+  {
+    "id": 1,
+    "category": "Databricks Intelligence Platform",
+    "question": "Databricks ワークスペースにおいて、クラスターの自動終了（Auto Termination）のデフォルト時間はどれですか？",
+    "choices": ["A. 30分", "B. 60分", "C. 120分", "D. 自動終了は無効"],
+    "answer": "C",
+    "explanation": "Databricks クラスターのデフォルトの自動終了時間は 120分（2時間）です。この設定はクラスター作成時にカスタマイズ可能で、コスト管理のために適切な値に設定することが推奨されます。"
+  },
+  {
+    "id": 2,
+    "category": "Databricks Intelligence Platform",
+    "question": "Databricks Repos の主な目的として正しいものはどれですか？",
+    "choices": ["A. データの保存と管理", "B. Git リポジトリとの統合によるバージョン管理", "C. クラスターの自動スケーリング", "D. ジョブのスケジューリング"],
+    "answer": "B",
+    "explanation": "Databricks Repos は Git リポジトリとの統合を提供し、ノートブックやコードのバージョン管理を可能にします。GitHub、GitLab、Azure DevOps などの Git プロバイダーに対応しています。"
+  },
+  {
+    "id": 3,
+    "category": "Databricks Intelligence Platform",
+    "question": "Databricks SQL ウェアハウスの種類として存在しないものはどれですか？",
+    "choices": ["A. Classic", "B. Pro", "C. Serverless", "D. Enterprise"],
+    "answer": "D",
+    "explanation": "Databricks SQL ウェアハウスには Classic、Pro、Serverless の3種類があります。Enterprise という種類は存在しません。Serverless は最も高速な起動時間を提供し、Pro は追加の高度な機能を備えています。"
+  },
+  {
+    "id": 4,
+    "category": "Databricks Intelligence Platform",
+    "question": "Databricks において、ノートブックで複数の言語を使用する方法として正しいものはどれですか？",
+    "choices": ["A. 別のクラスターに接続する", "B. マジックコマンド（%python, %sql 等）を使用する", "C. 言語は切り替えできない", "D. ノートブックの設定画面から変更する"],
+    "answer": "B",
+    "explanation": "Databricks ノートブックではマジックコマンド（%python, %sql, %scala, %r）を使用することで、セル単位で異なるプログラミング言語に切り替えることができます。デフォルト言語はノートブック作成時に設定しますが、個別のセルではマジックコマンドで上書き可能です。"
+  },
+  {
+    "id": 5,
+    "category": "Databricks Intelligence Platform",
+    "question": "All-Purpose クラスターと Job クラスターの違いとして正しいものはどれですか？",
+    "choices": ["A. All-Purpose クラスターはジョブ実行専用である", "B. Job クラスターはインタラクティブ分析に使用される", "C. Job クラスターはジョブ完了後に自動的に終了する", "D. 両者に違いはない"],
+    "answer": "C",
+    "explanation": "Job クラスターはワークフロー/ジョブの実行専用で、ジョブ完了後に自動的に終了します。一方、All-Purpose クラスターはインタラクティブな分析やノートブック開発に使用され、手動または自動終了設定で管理されます。Job クラスターの方がコスト効率が良い場合が多いです。"
+  },
+  {
+    "id": 6,
+    "category": "Databricks Intelligence Platform",
+    "question": "DBFS（Databricks File System）の説明として正しいものはどれですか？",
+    "choices": ["A. ローカルディスクにのみデータを保存する", "B. クラウドオブジェクトストレージを抽象化した分散ファイルシステムである", "C. リレーショナルデータベースである", "D. 外部の FTP サーバーと接続する"],
+    "answer": "B",
+    "explanation": "DBFS はクラウドオブジェクトストレージ（S3, ADLS, GCS）を抽象化した分散ファイルシステムです。DBFS パスを使用することで、クラウドストレージに対してファイルシステムのようなインターフェースでアクセスできます。"
+  },
+  {
+    "id": 7,
+    "category": "Development & Ingestion",
+    "question": "Auto Loader を使用してクラウドストレージから新しいファイルを増分的に取り込む場合、デフォルトで使用されるモードはどれですか？",
+    "choices": ["A. COPY INTO", "B. Directory listing", "C. File notification", "D. Trigger once"],
+    "answer": "B",
+    "explanation": "Auto Loader のデフォルトモードは Directory listing（ディレクトリリスト）モードです。このモードではクラウドストレージのディレクトリを定期的にスキャンして新しいファイルを検出します。大量のファイルがある場合は File notification モードに切り替えることで、より効率的な取り込みが可能です。"
+  },
+  {
+    "id": 8,
+    "category": "Development & Ingestion",
+    "question": "Delta Lake テーブルの MERGE INTO 文の主な用途として正しいものはどれですか？",
+    "choices": ["A. テーブルの削除", "B. Upsert（INSERT + UPDATE）操作", "C. スキーマの変更", "D. テーブルの最適化"],
+    "answer": "B",
+    "explanation": "MERGE INTO は Delta Lake テーブルに対する Upsert 操作を実行するために使用されます。ソースデータとターゲットテーブルを条件に基づいてマッチングし、一致する行の UPDATE、一致しない行の INSERT、さらに DELETE 操作も1つのトランザクションで実行できます。"
+  },
+  {
+    "id": 9,
+    "category": "Development & Ingestion",
+    "question": "Delta Lake の Time Travel 機能を使用してテーブルの過去のバージョンにアクセスする正しい SQL 構文はどれですか？",
+    "choices": ["A. SELECT * FROM table TIMESTAMP AS OF '2024-01-01'", "B. SELECT * FROM table AT TIMESTAMP '2024-01-01'", "C. SELECT * FROM table WHERE _timestamp = '2024-01-01'", "D. SELECT * FROM table ROLLBACK TO '2024-01-01'"],
+    "answer": "A",
+    "explanation": "Delta Lake の Time Travel では TIMESTAMP AS OF 句を使用して特定の時点のデータにアクセスできます。VERSION AS OF 句を使用してバージョン番号で指定することも可能です。例: SELECT * FROM table VERSION AS OF 5"
+  },
+  {
+    "id": 10,
+    "category": "Development & Ingestion",
+    "question": "Auto Loader で使用する readStream のフォーマット指定として正しいものはどれですか？",
+    "choices": ["A. spark.readStream.format('autoloader')", "B. spark.readStream.format('cloudFiles')", "C. spark.readStream.format('auto_loader')", "D. spark.readStream.format('incrementalLoad')"],
+    "answer": "B",
+    "explanation": "Auto Loader は spark.readStream.format('cloudFiles') を使用して読み取りストリームを作成します。'cloudFiles' はAuto Loaderのフォーマット名で、.option('cloudFiles.format', 'csv') のようにオプションでファイル形式を指定します。"
+  },
+  {
+    "id": 11,
+    "category": "Development & Ingestion",
+    "question": "Delta Lake の OPTIMIZE コマンドの主な目的はどれですか？",
+    "choices": ["A. テーブルのスキーマを変更する", "B. 小さなファイルを大きなファイルに統合する", "C. テーブルを削除する", "D. データのバックアップを作成する"],
+    "answer": "B",
+    "explanation": "OPTIMIZE コマンドは Delta テーブル内の小さなファイル（Small Files Problem）を大きなファイルに統合（コンパクション）します。これにより読み取りパフォーマンスが向上します。ZORDER BY 句と組み合わせることで、データの物理的な配置も最適化できます。"
+  },
+  {
+    "id": 12,
+    "category": "Development & Ingestion",
+    "question": "COPY INTO コマンドと Auto Loader の違いとして正しいものはどれですか？",
+    "choices": ["A. COPY INTO はストリーミング処理、Auto Loader はバッチ処理", "B. COPY INTO はべき等なバッチ処理、Auto Loader はストリーミングベース", "C. 両者に違いはない", "D. Auto Loader は SQL のみで使用可能"],
+    "answer": "B",
+    "explanation": "COPY INTO はべき等な（再実行しても重複しない）バッチ処理で SQL から実行できます。Auto Loader は Structured Streaming ベースで、チェックポイントを使用してファイルを増分的に取り込みます。大量のファイルや継続的な取り込みには Auto Loader が推奨されます。"
+  },
+  {
+    "id": 13,
+    "category": "Development & Ingestion",
+    "question": "メダリオンアーキテクチャ（マルチホップアーキテクチャ）の3つのレイヤーとして正しいものはどれですか？",
+    "choices": ["A. Input, Processing, Output", "B. Bronze, Silver, Gold", "C. Raw, Clean, Aggregate", "D. Source, Transform, Target"],
+    "answer": "B",
+    "explanation": "メダリオンアーキテクチャは Bronze（生データ）、Silver（クレンジング・変換済み）、Gold（ビジネスレベルの集計済み）の3層で構成されます。このアーキテクチャにより、データの品質を段階的に向上させながら、各レイヤーで適切な粒度のデータを提供できます。"
+  },
+  {
+    "id": 14,
+    "category": "Data Processing & Transformations",
+    "question": "PySpark で DataFrame からカラムを選択する正しい方法はどれですか？",
+    "choices": ["A. df.choose('col1', 'col2')", "B. df.select('col1', 'col2')", "C. df.pick('col1', 'col2')", "D. df.get('col1', 'col2')"],
+    "answer": "B",
+    "explanation": "PySpark DataFrame からカラムを選択するには select() メソッドを使用します。select() は1つ以上のカラム名または Column オブジェクトを引数に取り、選択したカラムのみを含む新しい DataFrame を返します。"
+  },
+  {
+    "id": 15,
+    "category": "Data Processing & Transformations",
+    "question": "Spark の Structured Streaming で出力モード（output mode）として存在しないものはどれですか？",
+    "choices": ["A. Append", "B. Complete", "C. Update", "D. Overwrite"],
+    "answer": "D",
+    "explanation": "Structured Streaming の出力モードは Append（新しい行のみ追加）、Complete（結果テーブル全体を出力）、Update（更新された行のみ出力）の3種類です。Overwrite は出力モードとして存在しません。"
+  },
+  {
+    "id": 16,
+    "category": "Data Processing & Transformations",
+    "question": "Spark で DataFrame のキャッシュに使用するメソッドとして正しいものはどれですか？",
+    "choices": ["A. df.store()", "B. df.save()", "C. df.cache()", "D. df.keep()"],
+    "answer": "C",
+    "explanation": "df.cache() は DataFrame をメモリにキャッシュします（MEMORY_AND_DISK レベル）。cache() は persist(StorageLevel.MEMORY_AND_DISK) のショートカットです。キャッシュにより、同じ DataFrame への繰り返しアクセスが高速化されます。不要になったら unpersist() で解放しましょう。"
+  },
+  {
+    "id": 17,
+    "category": "Data Processing & Transformations",
+    "question": "PySpark で null 値を含む行を削除する正しいメソッドはどれですか？",
+    "choices": ["A. df.removeNull()", "B. df.dropna()", "C. df.deleteNull()", "D. df.cleanNull()"],
+    "answer": "B",
+    "explanation": "PySpark では df.dropna() または df.na.drop() を使用して null 値を含む行を削除します。how='any'（デフォルト）で1つでも null があれば削除、how='all' で全カラムが null の場合のみ削除、subset パラメータで対象カラムを指定できます。"
+  },
+  {
+    "id": 18,
+    "category": "Data Processing & Transformations",
+    "question": "Spark の Adaptive Query Execution (AQE) が自動的に行う最適化として正しくないものはどれですか？",
+    "choices": ["A. シャッフルパーティションの自動結合", "B. Skew Join の最適化", "C. テーブルのスキーマ自動変更", "D. ブロードキャスト Join への動的切り替え"],
+    "answer": "C",
+    "explanation": "AQE は実行時の統計に基づいて、シャッフルパーティションの自動結合（小さいパーティションの統合）、Skew Join の自動処理、ブロードキャスト Join への動的切り替えなどを行います。テーブルのスキーマ変更は AQE の機能ではありません。"
+  },
+  {
+    "id": 19,
+    "category": "Data Processing & Transformations",
+    "question": "PySpark で window 関数を使用する際に必要なインポートとして正しいものはどれですか？",
+    "choices": ["A. from pyspark.sql.window import Window", "B. from pyspark.sql import WindowFunction", "C. from pyspark.window import Window", "D. from pyspark.sql.analytics import Window"],
+    "answer": "A",
+    "explanation": "Window 関数を使用するには from pyspark.sql.window import Window でインポートします。Window.partitionBy() や Window.orderBy() でウィンドウ仕様を定義し、rank()、row_number()、lag()、lead() などの関数と組み合わせて使用します。"
+  },
+  {
+    "id": 20,
+    "category": "Data Processing & Transformations",
+    "question": "Spark SQL で CTE（Common Table Expression）を定義する正しい構文はどれですか？",
+    "choices": ["A. DEFINE temp_view AS (SELECT ...)", "B. WITH cte_name AS (SELECT ...)", "C. CREATE TEMP cte_name AS (SELECT ...)", "D. LET cte_name = (SELECT ...)"],
+    "answer": "B",
+    "explanation": "CTE は WITH 句を使用して定義します。WITH cte_name AS (SELECT ...) SELECT * FROM cte_name という構文で、複雑なクエリを読みやすく構造化できます。複数の CTE をカンマで連結して定義することも可能です。"
+  },
+  {
+    "id": 21,
+    "category": "Data Processing & Transformations",
+    "question": "PySpark の explode() 関数の用途として正しいものはどれですか？",
+    "choices": ["A. カラムを削除する", "B. 配列やマップ型のカラムを複数の行に展開する", "C. 文字列を大文字に変換する", "D. null値を特定の値で置換する"],
+    "answer": "B",
+    "explanation": "explode() 関数は配列（ArrayType）やマップ（MapType）のカラムを、各要素ごとに個別の行に展開します。例えば、[1, 2, 3] という配列を持つ1行が、値 1, 2, 3 の3行に展開されます。null や空配列の場合に行を保持したい場合は explode_outer() を使用します。"
+  },
+  {
+    "id": 22,
+    "category": "Data Processing & Transformations",
+    "question": "Spark で Broadcast Join を明示的に指定する方法として正しいものはどれですか？",
+    "choices": ["A. df1.join(df2.broadcast(), 'key')", "B. df1.join(broadcast(df2), 'key')", "C. df1.broadcastJoin(df2, 'key')", "D. df1.join(df2, 'key', broadcast=True)"],
+    "answer": "B",
+    "explanation": "Broadcast Join は from pyspark.sql.functions import broadcast でインポートした broadcast() 関数を使用して、小さなテーブルをブロードキャスト対象として指定します。SQL では /*+ BROADCAST(table) */ ヒントを使用できます。小さいテーブルを全ノードに配布することで、シャッフルを回避しパフォーマンスが向上します。"
+  },
+  {
+    "id": 23,
+    "category": "Productionizing Data Pipelines",
+    "question": "Delta Live Tables (DLT) でデータ品質の期待値を定義するデコレータとして正しいものはどれですか？",
+    "choices": ["A. @dlt.quality", "B. @dlt.expect", "C. @dlt.constraint", "D. @dlt.validate"],
+    "answer": "B",
+    "explanation": "DLT では @dlt.expect デコレータ系（@dlt.expect, @dlt.expect_or_drop, @dlt.expect_or_fail, @dlt.expect_all）を使用してデータ品質の制約を定義します。expect は違反行を記録、expect_or_drop は違反行を除去、expect_or_fail はパイプラインを停止します。"
+  },
+  {
+    "id": 24,
+    "category": "Productionizing Data Pipelines",
+    "question": "Databricks Workflows でジョブのタスク間依存関係を設定する方法として正しいものはどれですか？",
+    "choices": ["A. depends_on パラメータで指定する", "B. タスクの実行順序は常に並列である", "C. 依存関係は設定できない", "D. SQL でのみ設定可能"],
+    "answer": "A",
+    "explanation": "Databricks Workflows では、タスクの depends_on パラメータを使用して他のタスクへの依存関係を定義できます。これにより DAG（有向非巡回グラフ）構造のワークフローを構築し、タスクの実行順序を制御できます。"
+  },
+  {
+    "id": 25,
+    "category": "Productionizing Data Pipelines",
+    "question": "Delta Live Tables のパイプラインにおける LIVE テーブルと STREAMING テーブルの違いとして正しいものはどれですか？",
+    "choices": ["A. LIVE テーブルはバッチ処理、STREAMING テーブルは増分処理で更新される", "B. 両者に違いはない", "C. STREAMING テーブルはバッチ処理のみ対応", "D. LIVE テーブルは読み取り専用"],
+    "answer": "A",
+    "explanation": "DLT の LIVE テーブル（Materialized View）は更新時にクエリ全体を再計算するバッチ処理です。STREAMING テーブルは Structured Streaming を使用して増分的にデータを処理し、新しいデータのみを処理するため効率的です。"
+  },
+  {
+    "id": 26,
+    "category": "Productionizing Data Pipelines",
+    "question": "Databricks Workflows のジョブをスケジュール実行する際、条件付きタスク（if/else）を設定できる機能はどれですか？",
+    "choices": ["A. Conditional Tasks（条件タスク）", "B. Task Values を使ったブランチング", "C. Run If 条件設定", "D. すべて正しい"],
+    "answer": "D",
+    "explanation": "Databricks Workflows では、条件タスク（if/else ロジック）、Task Values による動的なブランチング、Run If 条件設定など、複数の方法で条件付きのタスク実行フローを構築できます。これにより複雑なパイプラインのオーケストレーションが可能です。"
+  },
+  {
+    "id": 27,
+    "category": "Productionizing Data Pipelines",
+    "question": "Databricks ジョブの再試行ポリシーで設定できるパラメータとして正しくないものはどれですか？",
+    "choices": ["A. 最大再試行回数", "B. 再試行間の待機時間", "C. 再試行時のクラスターサイズ自動変更", "D. タスク失敗時の再試行"],
+    "answer": "C",
+    "explanation": "ジョブの再試行ポリシーでは、最大再試行回数、再試行間の待機時間、タスクレベルでの再試行設定が可能ですが、再試行時にクラスターサイズを自動的に変更する機能はありません。クラスターサイズの変更はクラスター設定で個別に行う必要があります。"
+  },
+  {
+    "id": 28,
+    "category": "Data Governance & Quality",
+    "question": "Unity Catalog の3レベルの名前空間として正しいものはどれですか？",
+    "choices": ["A. Database.Schema.Table", "B. Catalog.Schema.Table", "C. Workspace.Database.Table", "D. Account.Catalog.Table"],
+    "answer": "B",
+    "explanation": "Unity Catalog は Catalog.Schema.Table（Object）の3レベル名前空間を使用します。これにより、複数のワークスペースにまたがるデータガバナンスが可能になります。例: main.default.my_table のように指定します。"
+  },
+  {
+    "id": 29,
+    "category": "Data Governance & Quality",
+    "question": "Unity Catalog で他のユーザーにテーブルへの読み取り権限を付与する SQL として正しいものはどれですか？",
+    "choices": ["A. GRANT READ ON TABLE table_name TO user@example.com", "B. GRANT SELECT ON TABLE table_name TO user@example.com", "C. ALLOW READ ON table_name FOR user@example.com", "D. PERMIT SELECT ON table_name TO user@example.com"],
+    "answer": "B",
+    "explanation": "Unity Catalog では標準的な ANSI SQL の GRANT 文を使用します。テーブルの読み取り権限は GRANT SELECT ON TABLE table_name TO principal で付与します。READ ではなく SELECT が正しい権限名です。"
+  },
+  {
+    "id": 30,
+    "category": "Data Governance & Quality",
+    "question": "Delta Lake テーブルに NOT NULL 制約を追加する正しい SQL はどれですか？",
+    "choices": ["A. ALTER TABLE t ADD CONSTRAINT not_null CHECK (col IS NOT NULL)", "B. ALTER TABLE t ALTER COLUMN col SET NOT NULL", "C. ALTER TABLE t SET CONSTRAINT col NOT NULL", "D. UPDATE TABLE t SET COLUMN col NOT NULL"],
+    "answer": "B",
+    "explanation": "Delta Lake テーブルに NOT NULL 制約を追加するには ALTER TABLE t ALTER COLUMN col SET NOT NULL を使用します。CHECK 制約は ALTER TABLE t ADD CONSTRAINT name CHECK (condition) で追加できます。これらの制約によりデータ品質を保証できます。"
+  },
+  {
+    "id": 31,
+    "category": "Data Governance & Quality",
+    "question": "Unity Catalog における External Location の目的として正しいものはどれですか？",
+    "choices": ["A. 外部データベースへの接続設定", "B. クラウドストレージのパスとストレージ資格情報のマッピング", "C. 外部 API エンドポイントの登録", "D. 外部ユーザーのアクセス管理"],
+    "answer": "B",
+    "explanation": "External Location は Unity Catalog において、クラウドストレージ（S3, ADLS, GCS）の特定のパスとストレージ資格情報（Storage Credential）を紐付けるオブジェクトです。これにより、外部ストレージへのアクセスをガバナンスの下で管理できます。"
+  }
+]

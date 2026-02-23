@@ -1,0 +1,10 @@
+command:
+  - "python"
+  - "app.py"
+env:
+  - name: SERVING_ENDPOINT
+    value: "databricks-meta-llama-3-1-70b-instruct"
+  - name: VS_ENDPOINT_NAME
+    value: "exam-bot-vs-endpoint"
+  - name: VS_INDEX_NAME
+    value: "main.exam_bot.docs_chunks_index"
