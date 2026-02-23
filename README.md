@@ -54,8 +54,8 @@ databricks-sample-qa-bot/
 
 2. Databricks CLI でデプロイ:
 ```bash
-databricks apps create exam-bot
-databricks apps deploy exam-bot --source-code-path .
+databricks apps create exam-bot -p dbw-aws
+databricks apps deploy exam-bot --source-code-path . -p dbw-aws
 ```
 
 3. アプリのリソース設定で以下を追加:

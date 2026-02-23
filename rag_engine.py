@@ -89,17 +89,44 @@ class RAGEngine:
 
         if HAS_DATABRICKS:
             try:
-                self.vsc = VectorSearchClient()
+                # Databricks Apps: サービスプリンシパル認証
+                # 環境変数 DATABRICKS_HOST, DATABRICKS_CLIENT_ID,
+                # DATABRICKS_CLIENT_SECRET が自動設定される
+                db_host = os.environ.get("DATABRICKS_HOST", "")
+                client_id = os.environ.get("DATABRICKS_CLIENT_ID", "")
+                client_secret = os.environ.get("DATABRICKS_CLIENT_SECRET", "")
+
+                if db_host and client_id and client_secret:
+                    # OAuth M2M 認証（Databricks Apps 上での実行）
+                    workspace_url = db_host if db_host.startswith("https://") else f"https://{db_host}"
+                    logger.info(f"OAuth M2M 認証を使用: {workspace_url}")
+
+                    self.workspace_client = WorkspaceClient(
+                        host=workspace_url,
+                        client_id=client_id,
+                        client_secret=client_secret,
+                    )
+                    self.vsc = VectorSearchClient(
+                        workspace_url=workspace_url,
+                        service_principal_client_id=client_id,
+                        service_principal_client_secret=client_secret,
+                    )
+                else:
+                    # デフォルト認証（ノートブック等）
+                    logger.info("デフォルト認証を使用")
+                    self.workspace_client = WorkspaceClient()
+                    self.vsc = VectorSearchClient()
+
                 self.index = self.vsc.get_index(
                     endpoint_name=self.vs_endpoint_name,
                     index_name=self.vs_index_name,
                 )
-                self.workspace_client = WorkspaceClient()
                 logger.info("RAG Engine 初期化完了")
             except Exception as e:
                 logger.error(f"RAG Engine 初期化エラー: {e}")
                 self.vsc = None
                 self.index = None
+                self.workspace_client = None
 
     @property
     def is_available(self) -> bool:
