@@ -7,6 +7,11 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install langchain-text-splitters beautifulsoup4 requests
+# MAGIC %restart_python
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 設定
 
@@ -23,10 +28,9 @@ FULL_TABLE_NAME = f"{CATALOG_NAME}.{SCHEMA_NAME}.{TABLE_NAME}"
 CHUNK_SIZE = 500  # 文字数
 CHUNK_OVERLAP = 100  # オーバーラップ文字数
 
-# COMMAND ----------
-
-# MAGIC %pip install langchain-text-splitters beautifulsoup4 requests
-# MAGIC %restart_python
+# クロール設定
+MAX_PAGES_PER_SEED = 10  # 各シード URL から辿るサブページの最大数
+CRAWL_DELAY = 0.5  # リクエスト間隔（秒）
 
 # COMMAND ----------
 
@@ -42,11 +46,15 @@ spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG_NAME}.{SCHEMA_NAME}")
 
 # MAGIC %md
 # MAGIC ## クロール対象 URL の定義
+# MAGIC
+# MAGIC 各カテゴリのシード URL を起点に、同一セクション内のサブページも
+# MAGIC 自動的にクロールします（各シードから最大 `MAX_PAGES_PER_SEED` ページ）。
 
 # COMMAND ----------
 
-# Data Engineer Associate 試験範囲に沿ったドキュメント URL
-CRAWL_URLS = {
+# Data Engineer Associate 試験範囲に沿ったシード URL
+# index ページからリンクされている詳細ページも自動クロールされます
+CRAWL_SEEDS = {
     "Databricks Intelligence Platform": [
         "https://docs.databricks.com/en/getting-started/concepts.html",
         "https://docs.databricks.com/en/introduction/index.html",
@@ -91,17 +99,18 @@ CRAWL_URLS = {
 # MAGIC
 # MAGIC LangChain の `RecursiveCharacterTextSplitter` を使用して、
 # MAGIC 意味のある境界（段落・文）でテキストを分割します。
+# MAGIC シード URL からリンク先のサブページも自動発見してクロールします。
 
 # COMMAND ----------
 
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
 import re
 import time
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # テキストスプリッターの初期化
-# セパレータの優先順位: 段落 → 改行 → 句点 → ピリオド → スペース → 文字
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=CHUNK_SIZE,
     chunk_overlap=CHUNK_OVERLAP,
@@ -110,35 +119,103 @@ text_splitter = RecursiveCharacterTextSplitter(
     is_separator_regex=False,
 )
 
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DatabricksExamBot/1.0)"}
+DOCS_BASE = "https://docs.databricks.com/en/"
 
-def fetch_page_text(url: str) -> str:
-    """URL からページのメインテキストを取得"""
+
+def fetch_page(url: str):
+    """URL からページの BeautifulSoup オブジェクトを取得"""
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (compatible; DatabricksExamBot/1.0)"
-        }
-        response = requests.get(url, headers=headers, timeout=30)
+        response = requests.get(url, headers=HEADERS, timeout=30)
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-
-        # ナビゲーション、ヘッダー、フッターを除去
-        for tag in soup.find_all(["nav", "header", "footer", "script", "style", "aside"]):
-            tag.decompose()
-
-        # メインコンテンツ領域を取得
-        main = soup.find("main") or soup.find("article") or soup.find("div", {"role": "main"})
-        if main:
-            text = main.get_text(separator="\n", strip=True)
-        else:
-            text = soup.get_text(separator="\n", strip=True)
-
-        # 連続改行・空白を整理
-        text = re.sub(r"\n{3,}", "\n\n", text)
-        text = re.sub(r" {2,}", " ", text)
-        return text.strip()
+        return BeautifulSoup(response.text, "html.parser")
     except Exception as e:
-        print(f"  ⚠ クロール失敗: {url} - {e}")
-        return ""
+        print(f"    ⚠ 取得失敗: {url} - {e}")
+        return None
+
+
+def extract_text(soup) -> str:
+    """BeautifulSoup からメインテキストを抽出"""
+    # 不要要素を除去
+    for tag in soup.find_all(["nav", "header", "footer", "script", "style", "aside"]):
+        tag.decompose()
+
+    main = soup.find("main") or soup.find("article") or soup.find("div", {"role": "main"})
+    text = (main or soup).get_text(separator="\n", strip=True)
+
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r" {2,}", " ", text)
+    return text.strip()
+
+
+def discover_links(soup, seed_url: str) -> list[str]:
+    """ページ内から同一セクションのサブページリンクを発見"""
+    # シード URL のパスプレフィックスを計算（例: /en/delta/ ）
+    parsed = urlparse(seed_url)
+    # index.html を除いたディレクトリ部分をプレフィックスにする
+    path = parsed.path
+    if path.endswith(".html"):
+        path = path.rsplit("/", 1)[0] + "/"
+
+    links = []
+    seen = set()
+    main = soup.find("main") or soup.find("article") or soup
+
+    for a_tag in main.find_all("a", href=True):
+        href = a_tag["href"]
+        full_url = urljoin(seed_url, href)
+
+        # フラグメントとクエリを除去
+        full_url = full_url.split("#")[0].split("?")[0]
+
+        # 同一ドメイン・同一セクションに限定
+        if not full_url.startswith(DOCS_BASE):
+            continue
+        full_parsed = urlparse(full_url)
+        if not full_parsed.path.startswith(path):
+            continue
+        # HTML ページのみ
+        if not (full_parsed.path.endswith(".html") or full_parsed.path.endswith("/")):
+            continue
+        # 重複排除
+        if full_url in seen or full_url == seed_url:
+            continue
+
+        seen.add(full_url)
+        links.append(full_url)
+
+    return links
+
+
+def crawl_seed(seed_url: str, max_pages: int) -> list[tuple[str, str]]:
+    """シード URL とそのサブページをクロールし、(url, text) のリストを返す"""
+    results = []
+
+    # まずシードページを取得
+    soup = fetch_page(seed_url)
+    if soup is None:
+        return results
+
+    text = extract_text(soup)
+    if text and len(text) > 100:
+        results.append((seed_url, text))
+
+    # サブページリンクを発見
+    sub_links = discover_links(soup, seed_url)
+    print(f"    → {len(sub_links)} 件のサブページを発見")
+
+    # サブページをクロール（上限あり）
+    for sub_url in sub_links[:max_pages]:
+        time.sleep(CRAWL_DELAY)
+        sub_soup = fetch_page(sub_url)
+        if sub_soup is None:
+            continue
+        sub_text = extract_text(sub_soup)
+        if sub_text and len(sub_text) > 100:
+            results.append((sub_url, sub_text))
+            print(f"    📄 {sub_url} ({len(sub_text)} 文字)")
+
+    return results
 
 # COMMAND ----------
 
@@ -148,60 +225,123 @@ def fetch_page_text(url: str) -> str:
 # COMMAND ----------
 
 all_chunks = []
-chunk_id = 0
+crawled_urls = set()  # グローバル重複排除
 
-for category, urls in CRAWL_URLS.items():
+import hashlib
+from datetime import datetime
+
+crawled_at = datetime.utcnow().isoformat()
+
+
+def make_chunk_id(source_url: str, chunk_index: int) -> str:
+    """URL とチャンク番号から決定的な chunk_id を生成（冪等性の担保）"""
+    raw = f"{source_url}::{chunk_index}"
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+for category, seed_urls in CRAWL_SEEDS.items():
     print(f"\n📂 カテゴリ: {category}")
-    for url in urls:
-        print(f"  🔗 クロール中: {url}")
-        text = fetch_page_text(url)
-        if not text:
-            continue
+    category_page_count = 0
+    category_chunk_count = 0
 
-        chunks = text_splitter.split_text(text)
-        print(f"  ✅ {len(chunks)} チャンク取得")
+    for seed_url in seed_urls:
+        print(f"\n  🔗 シード: {seed_url}")
+        pages = crawl_seed(seed_url, MAX_PAGES_PER_SEED)
 
-        for chunk in chunks:
-            all_chunks.append({
-                "chunk_id": chunk_id,
-                "category": category,
-                "source_url": url,
-                "content": chunk,
-            })
-            chunk_id += 1
+        for url, text in pages:
+            if url in crawled_urls:
+                continue
+            crawled_urls.add(url)
 
-        # レート制限対策
-        time.sleep(1)
+            chunks = text_splitter.split_text(text)
+            for i, chunk in enumerate(chunks):
+                all_chunks.append({
+                    "chunk_id": make_chunk_id(url, i),
+                    "category": category,
+                    "source_url": url,
+                    "content": chunk,
+                    "crawled_at": crawled_at,
+                })
 
-print(f"\n📊 合計: {len(all_chunks)} チャンク")
+            category_page_count += 1
+            category_chunk_count += len(chunks)
+
+        time.sleep(CRAWL_DELAY)
+
+    print(f"\n  📊 {category}: {category_page_count} ページ, {category_chunk_count} チャンク")
+
+print(f"\n{'='*50}")
+print(f"📊 合計: {len(crawled_urls)} ページ, {len(all_chunks)} チャンク")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Delta テーブルに保存
+# MAGIC ## Delta テーブルに保存（冪等・定期実行対応）
+# MAGIC
+# MAGIC - `chunk_id` は URL + チャンク番号のハッシュで決定的に生成
+# MAGIC - `MERGE INTO` で既存データを更新（upsert）
+# MAGIC - 何度実行しても同じ結果になります（冪等性）
+# MAGIC - `crawled_at` で最終クロール日時を追跡
 
 # COMMAND ----------
 
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
+from pyspark.sql.types import StructType, StructField, StringType
 
 schema = StructType([
-    StructField("chunk_id", IntegerType(), False),
+    StructField("chunk_id", StringType(), False),
     StructField("category", StringType(), False),
     StructField("source_url", StringType(), False),
     StructField("content", StringType(), False),
+    StructField("crawled_at", StringType(), False),
 ])
 
-df = spark.createDataFrame(all_chunks, schema=schema)
+# テーブルが存在しない場合のみ作成（CDF 有効）
+spark.sql(f"""
+    CREATE TABLE IF NOT EXISTS {FULL_TABLE_NAME} (
+        chunk_id STRING NOT NULL,
+        category STRING NOT NULL,
+        source_url STRING NOT NULL,
+        content STRING NOT NULL,
+        crawled_at STRING NOT NULL
+    )
+    USING DELTA
+    TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true')
+""")
 
-# Change Data Feed を有効にして保存（Vector Search の Delta Sync に必要）
-df.write \
-    .format("delta") \
-    .mode("overwrite") \
-    .option("overwriteSchema", "true") \
-    .option("delta.enableChangeDataFeed", "true") \
-    .saveAsTable(FULL_TABLE_NAME)
+print(f"✅ テーブル {FULL_TABLE_NAME} を確認/作成しました")
 
-print(f"✅ テーブル {FULL_TABLE_NAME} に {df.count()} 行を保存しました")
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## MERGE INTO（Upsert）
+
+# COMMAND ----------
+
+df_new = spark.createDataFrame(all_chunks, schema=schema)
+df_new.createOrReplaceTempView("new_chunks")
+
+# MERGE: chunk_id が一致したら更新、なければ挿入
+merge_result = spark.sql(f"""
+    MERGE INTO {FULL_TABLE_NAME} AS target
+    USING new_chunks AS source
+    ON target.chunk_id = source.chunk_id
+    WHEN MATCHED THEN UPDATE SET
+        target.category = source.category,
+        target.source_url = source.source_url,
+        target.content = source.content,
+        target.crawled_at = source.crawled_at
+    WHEN NOT MATCHED THEN INSERT *
+""")
+
+# 古いチャンク（今回のクロールに含まれないもの）を削除
+spark.sql(f"""
+    DELETE FROM {FULL_TABLE_NAME}
+    WHERE crawled_at < '{crawled_at}'
+""")
+
+row_count = spark.sql(f"SELECT COUNT(*) AS cnt FROM {FULL_TABLE_NAME}").first()["cnt"]
+print(f"✅ MERGE 完了: {FULL_TABLE_NAME} に {row_count} 行")
+print(f"🕐 クロール日時: {crawled_at}")
 
 # COMMAND ----------
 
@@ -216,7 +356,7 @@ display(spark.sql(f"SELECT * FROM {FULL_TABLE_NAME} LIMIT 10"))
 
 # カテゴリ別のチャンク数を確認
 display(spark.sql(f"""
-    SELECT category, COUNT(*) as chunk_count
+    SELECT category, COUNT(*) as chunk_count, MIN(crawled_at) as oldest, MAX(crawled_at) as latest
     FROM {FULL_TABLE_NAME}
     GROUP BY category
     ORDER BY category
