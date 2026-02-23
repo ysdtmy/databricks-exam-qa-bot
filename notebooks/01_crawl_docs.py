@@ -18,8 +18,8 @@
 # COMMAND ----------
 
 # 設定 - ご自身の環境に合わせて変更してください
-CATALOG_NAME = "main"
-SCHEMA_NAME = "exam_bot"
+CATALOG_NAME = "exam_qa_bot"
+SCHEMA_NAME = "default"
 TABLE_NAME = "docs_chunks"
 
 FULL_TABLE_NAME = f"{CATALOG_NAME}.{SCHEMA_NAME}.{TABLE_NAME}"
@@ -120,7 +120,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DatabricksExamBot/1.0)"}
-DOCS_BASE = "https://docs.databricks.com/en/"
+DOCS_DOMAIN = "https://docs.databricks.com"
 
 
 def fetch_page(url: str):
@@ -148,36 +148,52 @@ def extract_text(soup) -> str:
     return text.strip()
 
 
+def _extract_section(url: str) -> str:
+    """URL からドキュメントのセクション名を抽出
+    例: /en/compute/index.html → 'compute'
+        /aws/en/delta/merge.html → 'delta'
+    """
+    path = urlparse(url).path
+    # /en/ または /<cloud>/en/ の後のセグメントを取得
+    match = re.search(r"/en/([^/]+)", path)
+    return match.group(1) if match else ""
+
+
 def discover_links(soup, seed_url: str) -> list[str]:
-    """ページ内から同一セクションのサブページリンクを発見"""
-    # シード URL のパスプレフィックスを計算（例: /en/delta/ ）
-    parsed = urlparse(seed_url)
-    # index.html を除いたディレクトリ部分をプレフィックスにする
-    path = parsed.path
-    if path.endswith(".html"):
-        path = path.rsplit("/", 1)[0] + "/"
+    """ページ内から Databricks ドキュメントのサブページリンクを発見
+
+    Databricks ドキュメントはリンクに /aws/en/, /gcp/en/, /azure/en/
+    などのクラウドプレフィックスを使用するため、セクション名で照合する。
+    """
+    section = _extract_section(seed_url)
+    if not section:
+        return []
 
     links = []
     seen = set()
-    main = soup.find("main") or soup.find("article") or soup
 
-    for a_tag in main.find_all("a", href=True):
+    # ページ全体からリンクを探す（<main> 内だけでなく）
+    for a_tag in soup.find_all("a", href=True):
         href = a_tag["href"]
         full_url = urljoin(seed_url, href)
 
         # フラグメントとクエリを除去
         full_url = full_url.split("#")[0].split("?")[0]
 
-        # 同一ドメイン・同一セクションに限定
-        if not full_url.startswith(DOCS_BASE):
+        # Databricks ドメイン内に限定
+        if not full_url.startswith(DOCS_DOMAIN):
             continue
-        full_parsed = urlparse(full_url)
-        if not full_parsed.path.startswith(path):
+
+        # 同じセクションに属するかチェック（/en/<section>/ のパターン）
+        full_path = urlparse(full_url).path
+        if f"/en/{section}" not in full_path:
             continue
+
         # HTML ページのみ
-        if not (full_parsed.path.endswith(".html") or full_parsed.path.endswith("/")):
+        if not (full_path.endswith(".html") or full_path.endswith("/")):
             continue
-        # 重複排除
+
+        # 重複排除・自分自身排除
         if full_url in seen or full_url == seed_url:
             continue
 
