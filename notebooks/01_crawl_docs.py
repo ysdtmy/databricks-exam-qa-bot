@@ -172,35 +172,32 @@ def extract_text(soup) -> str:
     return text.strip()
 
 
-def _extract_section(url: str) -> str:
-    """URL からドキュメントのセクション名を抽出
-    例: /en/compute/index.html → 'compute'
-        /aws/en/delta/merge.html → 'delta'
+def discover_links_from_sidebar(soup, seed_url: str) -> list[str]:
+    """左ペインのサイドバーナビゲーションからリンクを抽出
+
+    Databricks ドキュメントのサイドバーは
+    <nav aria-label="Docs sidebar"> 内の a.menu__link で構成される。
     """
-    path = urlparse(url).path
-    # /en/ または /<cloud>/en/ の後のセグメントを取得
-    match = re.search(r"/en/([^/]+)", path)
-    return match.group(1) if match else ""
-
-
-def discover_links(soup, seed_url: str) -> list[str]:
-    """ページ内から Databricks ドキュメントのサブページリンクを発見
-
-    Databricks ドキュメントはリンクに /aws/en/, /gcp/en/, /azure/en/
-    などのクラウドプレフィックスを使用するため、セクション名で照合する。
-    """
-    section = _extract_section(seed_url)
-    if not section:
-        return []
-
     links = []
     seen = set()
 
-    # ページ全体からリンクを探す（<main> 内だけでなく）
-    for a_tag in soup.find_all("a", href=True):
-        href = a_tag["href"]
-        full_url = urljoin(seed_url, href)
+    # サイドバーナビゲーションを取得
+    sidebar = soup.find("nav", attrs={"aria-label": "Docs sidebar"})
+    if not sidebar:
+        # フォールバック: 他のナビゲーション要素を探す
+        sidebar = soup.find("nav", class_=lambda c: c and "menu" in c) if soup else None
 
+    if not sidebar:
+        print(f"    ⚠ サイドバーが見つかりません: {seed_url}")
+        return []
+
+    # サイドバー内の全リンクを取得
+    for a_tag in sidebar.find_all("a", class_=lambda c: c and "menu__link" in c):
+        href = a_tag.get("href", "")
+        if not href or href.startswith("#"):
+            continue
+
+        full_url = urljoin(seed_url, href)
         # フラグメントとクエリを除去
         full_url = full_url.split("#")[0].split("?")[0]
 
@@ -208,16 +205,47 @@ def discover_links(soup, seed_url: str) -> list[str]:
         if not full_url.startswith(DOCS_DOMAIN):
             continue
 
-        # 同じセクションに属するかチェック（/en/<section>/ のパターン）
+        # 重複排除・自分自身排除
+        if full_url in seen or full_url == seed_url:
+            continue
+
+        seen.add(full_url)
+        links.append(full_url)
+
+    return links
+
+
+def discover_links_from_content(soup, seed_url: str) -> list[str]:
+    """メインコンテンツ内のリンクも抽出（サイドバーの補完用）"""
+    section = ""
+    path = urlparse(seed_url).path
+    match = re.search(r"/en/([^/]+)", path)
+    if match:
+        section = match.group(1)
+
+    if not section:
+        return []
+
+    links = []
+    seen = set()
+
+    # メインコンテンツからリンクを探す
+    main = soup.find("main") or soup.find("article") or soup
+    for a_tag in main.find_all("a", href=True):
+        href = a_tag["href"]
+        full_url = urljoin(seed_url, href)
+        full_url = full_url.split("#")[0].split("?")[0]
+
+        if not full_url.startswith(DOCS_DOMAIN):
+            continue
+
         full_path = urlparse(full_url).path
         if f"/en/{section}" not in full_path:
             continue
 
-        # HTML ページのみ
         if not (full_path.endswith(".html") or full_path.endswith("/")):
             continue
 
-        # 重複排除・自分自身排除
         if full_url in seen or full_url == seed_url:
             continue
 
@@ -231,21 +259,26 @@ def crawl_seed(seed_url: str, max_pages: int) -> list[tuple[str, str]]:
     """シード URL とそのサブページをクロールし、(url, text) のリストを返す"""
     results = []
 
-    # まずシードページを取得
-    soup = fetch_page(seed_url)
-    if soup is None:
+    # まずシードページを取得（extract_text 前の soup を保存）
+    raw_soup = fetch_page(seed_url)
+    if raw_soup is None:
         return results
 
-    text = extract_text(soup)
+    # リンク発見は extract_text の前に行う（extract_text は nav を削除するため）
+    sidebar_links = discover_links_from_sidebar(raw_soup, seed_url)
+    content_links = discover_links_from_content(raw_soup, seed_url)
+
+    # サイドバー優先、コンテンツで補完（重複排除）
+    all_links = list(dict.fromkeys(sidebar_links + content_links))
+    print(f"    → サイドバー: {len(sidebar_links)} 件, コンテンツ: {len(content_links)} 件, 合計: {len(all_links)} 件")
+
+    # シードページ自体のテキストを取得
+    text = extract_text(raw_soup)
     if text and len(text) > 100:
         results.append((seed_url, text))
 
-    # サブページリンクを発見
-    sub_links = discover_links(soup, seed_url)
-    print(f"    → {len(sub_links)} 件のサブページを発見")
-
     # サブページをクロール（上限あり）
-    for sub_url in sub_links[:max_pages]:
+    for sub_url in all_links[:max_pages]:
         time.sleep(CRAWL_DELAY)
         sub_soup = fetch_page(sub_url)
         if sub_soup is None:
