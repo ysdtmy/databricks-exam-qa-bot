@@ -53,66 +53,47 @@ spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG_NAME}.{SCHEMA_NAME}")
 # COMMAND ----------
 
 # Data Engineer Associate 試験範囲に沿ったシード URL
-# index ページからリンクされている詳細ページも自動クロールされます
+# sitemap.xml からセクション内のサブページを自動発見します
 CRAWL_SEEDS = {
     "Databricks Intelligence Platform": [
-        "https://docs.databricks.com/en/getting-started/concepts.html",
-        "https://docs.databricks.com/en/introduction/index.html",
-        "https://docs.databricks.com/en/compute/index.html",
-        "https://docs.databricks.com/en/compute/sql-warehouse/index.html",
-        "https://docs.databricks.com/en/sql/index.html",
-        "https://docs.databricks.com/en/repos/index.html",
-        "https://docs.databricks.com/en/notebooks/index.html",
-        "https://docs.databricks.com/en/dbfs/index.html",
+        "https://docs.databricks.com/aws/en/getting-started/concepts",
+        "https://docs.databricks.com/aws/en/introduction",
+        "https://docs.databricks.com/aws/en/compute",
+        "https://docs.databricks.com/aws/en/compute/sql-warehouse/",
+        "https://docs.databricks.com/aws/en/sql/",
+        "https://docs.databricks.com/aws/en/repos/",
+        "https://docs.databricks.com/aws/en/notebooks/",
+        "https://docs.databricks.com/aws/en/dbfs/",
     ],
     "Development & Ingestion": [
-        "https://docs.databricks.com/en/delta/index.html",
-        "https://docs.databricks.com/en/delta/create-tables.html",
-        "https://docs.databricks.com/en/delta/merge.html",
-        "https://docs.databricks.com/en/delta/update.html",
-        "https://docs.databricks.com/en/delta/delete-on.html",
-        "https://docs.databricks.com/en/delta/history.html",
-        "https://docs.databricks.com/en/delta/time-travel.html",
-        "https://docs.databricks.com/en/ingestion/auto-loader/index.html",
-        "https://docs.databricks.com/en/ingestion/copy-into/index.html",
-        "https://docs.databricks.com/en/tables/multi-hop.html",
-        "https://docs.databricks.com/en/connect/external-systems/index.html",
+        "https://docs.databricks.com/aws/en/delta/",
+        "https://docs.databricks.com/aws/en/delta/merge",
+        "https://docs.databricks.com/aws/en/delta/history",
+        "https://docs.databricks.com/aws/en/ingestion/auto-loader/",
+        "https://docs.databricks.com/aws/en/ingestion/copy-into/",
+        "https://docs.databricks.com/aws/en/data-engineering/",
+        "https://docs.databricks.com/aws/en/connect/",
     ],
     "Data Processing & Transformations": [
-        "https://docs.databricks.com/en/spark/index.html",
-        "https://docs.databricks.com/en/pyspark/index.html",
-        "https://docs.databricks.com/en/pyspark/basics.html",
-        "https://docs.databricks.com/en/sql/language-manual/index.html",
-        "https://docs.databricks.com/en/sql/language-manual/sql-ref-syntax-qry-select.html",
-        "https://docs.databricks.com/en/structured-streaming/index.html",
-        "https://docs.databricks.com/en/structured-streaming/triggers.html",
-        "https://docs.databricks.com/en/structured-streaming/watermarks.html",
-        "https://docs.databricks.com/en/udf/index.html",
-        "https://docs.databricks.com/en/spark/caching.html",
-        "https://docs.databricks.com/en/optimizations/index.html",
-        "https://docs.databricks.com/en/delta/data-skipping.html",
+        "https://docs.databricks.com/aws/en/spark/",
+        "https://docs.databricks.com/aws/en/pyspark/",
+        "https://docs.databricks.com/aws/en/sql/language-manual/",
+        "https://docs.databricks.com/aws/en/structured-streaming/",
+        "https://docs.databricks.com/aws/en/udf/",
+        "https://docs.databricks.com/aws/en/optimizations/",
+        "https://docs.databricks.com/aws/en/delta/data-skipping",
     ],
     "Productionizing Data Pipelines": [
-        "https://docs.databricks.com/en/delta-live-tables/index.html",
-        "https://docs.databricks.com/en/delta-live-tables/tutorial.html",
-        "https://docs.databricks.com/en/delta-live-tables/updates.html",
-        "https://docs.databricks.com/en/delta-live-tables/observability.html",
-        "https://docs.databricks.com/en/workflows/index.html",
-        "https://docs.databricks.com/en/workflows/jobs/create-run-jobs.html",
-        "https://docs.databricks.com/en/workflows/jobs/schedule-jobs.html",
-        "https://docs.databricks.com/en/workflows/jobs/monitor-jobs.html",
-        "https://docs.databricks.com/en/jobs/index.html",
-        "https://docs.databricks.com/en/jobs/schedule.html",
+        "https://docs.databricks.com/aws/en/delta-live-tables/",
+        "https://docs.databricks.com/aws/en/workflows/",
+        "https://docs.databricks.com/aws/en/jobs/",
     ],
     "Data Governance & Quality": [
-        "https://docs.databricks.com/en/data-governance/unity-catalog/index.html",
-        "https://docs.databricks.com/en/data-governance/unity-catalog/manage-privileges/index.html",
-        "https://docs.databricks.com/en/data-governance/unity-catalog/create-catalogs.html",
-        "https://docs.databricks.com/en/data-governance/unity-catalog/create-schemas.html",
-        "https://docs.databricks.com/en/data-governance/unity-catalog/create-tables.html",
-        "https://docs.databricks.com/en/tables/constraints.html",
-        "https://docs.databricks.com/en/delta-live-tables/expectations.html",
-        "https://docs.databricks.com/en/data-governance/index.html",
+        "https://docs.databricks.com/aws/en/data-governance/unity-catalog/",
+        "https://docs.databricks.com/aws/en/data-governance/unity-catalog/manage-privileges/",
+        "https://docs.databricks.com/aws/en/tables/constraints",
+        "https://docs.databricks.com/aws/en/delta-live-tables/expectations",
+        "https://docs.databricks.com/aws/en/data-governance/",
     ],
 }
 
@@ -132,6 +113,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import re
 import time
+import xml.etree.ElementTree as ET
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # テキストスプリッターの初期化
@@ -145,6 +127,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; DatabricksExamBot/1.0)"}
 DOCS_DOMAIN = "https://docs.databricks.com"
+SITEMAP_URL = "https://docs.databricks.com/sitemap.xml"
 
 
 def fetch_page(url: str):
@@ -172,52 +155,101 @@ def extract_text(soup) -> str:
     return text.strip()
 
 
-def _extract_section(url: str) -> str:
-    """URL からドキュメントのセクション名を抽出
-    例: /en/compute/index.html → 'compute'
-        /aws/en/delta/merge.html → 'delta'
+def fetch_sitemap_urls() -> list[str]:
+    """sitemap.xml から全ドキュメント URL を取得（1 回だけ取得してキャッシュ）"""
+    try:
+        response = requests.get(SITEMAP_URL, headers=HEADERS, timeout=30)
+        response.raise_for_status()
+        root = ET.fromstring(response.content)
+        # sitemap.xml の namespace
+        ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+        urls = [loc.text for loc in root.findall(".//s:loc", ns) if loc.text]
+        print(f"📡 sitemap.xml から {len(urls)} 件の URL を取得")
+        return urls
+    except Exception as e:
+        print(f"⚠ sitemap.xml の取得に失敗: {e}")
+        return []
+
+
+# sitemap を 1 回だけ取得してキャッシュ
+SITEMAP_URLS = fetch_sitemap_urls()
+
+
+def discover_links_from_sitemap(seed_url: str) -> list[str]:
+    """sitemap.xml からシード URL と同一セクションのリンクを発見
+
+    シード URL のパスプレフィックスに一致する URL をフィルタリングする。
+    例: seed = .../aws/en/compute → .../aws/en/compute/* を全て返す
     """
-    path = urlparse(url).path
-    # /en/ または /<cloud>/en/ の後のセグメントを取得
+    # セクションのパスプレフィックスを決定
+    parsed = urlparse(seed_url)
+    seed_path = parsed.path.rstrip("/")
+
+    # セクションのベースディレクトリを取得
+    # 例: /aws/en/compute/sql-warehouse → /aws/en/compute/sql-warehouse/
+    # 例: /aws/en/delta/merge → /aws/en/delta/
+    # ページ個別 URL の場合は親ディレクトリをセクションとする
+    section_prefix = seed_path
+    if not seed_path.endswith("/"):
+        # 最後のセグメントがディレクトリかページかを判定
+        # sitemap 内に seed_path + "/" で始まる URL があればディレクトリ
+        has_children = any(
+            urlparse(u).path.startswith(seed_path + "/") for u in SITEMAP_URLS
+        )
+        if not has_children:
+            # ページ個別 URL → 親ディレクトリをセクションとする
+            section_prefix = seed_path.rsplit("/", 1)[0]
+
+    section_prefix = section_prefix.rstrip("/") + "/"
+
+    links = []
+    seen = set()
+    seed_normalized = seed_url.rstrip("/")
+
+    for sitemap_url in SITEMAP_URLS:
+        sitemap_path = urlparse(sitemap_url).path
+        if not sitemap_path.startswith(section_prefix):
+            continue
+
+        url_normalized = sitemap_url.rstrip("/")
+        if url_normalized in seen or url_normalized == seed_normalized:
+            continue
+
+        seen.add(url_normalized)
+        links.append(sitemap_url)
+
+    return links
+
+
+def discover_links_from_content(soup, seed_url: str) -> list[str]:
+    """メインコンテンツ内のリンクも抽出（sitemap の補完用）"""
+    section = ""
+    path = urlparse(seed_url).path
+    # /aws/en/section/... または /en/section/... の両方に対応
     match = re.search(r"/en/([^/]+)", path)
-    return match.group(1) if match else ""
+    if match:
+        section = match.group(1)
 
-
-def discover_links(soup, seed_url: str) -> list[str]:
-    """ページ内から Databricks ドキュメントのサブページリンクを発見
-
-    Databricks ドキュメントはリンクに /aws/en/, /gcp/en/, /azure/en/
-    などのクラウドプレフィックスを使用するため、セクション名で照合する。
-    """
-    section = _extract_section(seed_url)
     if not section:
         return []
 
     links = []
     seen = set()
 
-    # ページ全体からリンクを探す（<main> 内だけでなく）
-    for a_tag in soup.find_all("a", href=True):
+    # メインコンテンツからリンクを探す
+    main = soup.find("main") or soup.find("article") or soup
+    for a_tag in main.find_all("a", href=True):
         href = a_tag["href"]
         full_url = urljoin(seed_url, href)
-
-        # フラグメントとクエリを除去
         full_url = full_url.split("#")[0].split("?")[0]
 
-        # Databricks ドメイン内に限定
         if not full_url.startswith(DOCS_DOMAIN):
             continue
 
-        # 同じセクションに属するかチェック（/en/<section>/ のパターン）
         full_path = urlparse(full_url).path
         if f"/en/{section}" not in full_path:
             continue
 
-        # HTML ページのみ
-        if not (full_path.endswith(".html") or full_path.endswith("/")):
-            continue
-
-        # 重複排除・自分自身排除
         if full_url in seen or full_url == seed_url:
             continue
 
@@ -232,20 +264,26 @@ def crawl_seed(seed_url: str, max_pages: int) -> list[tuple[str, str]]:
     results = []
 
     # まずシードページを取得
-    soup = fetch_page(seed_url)
-    if soup is None:
+    raw_soup = fetch_page(seed_url)
+    if raw_soup is None:
         return results
 
-    text = extract_text(soup)
+    # sitemap.xml からセクション内のリンクを発見
+    sitemap_links = discover_links_from_sitemap(seed_url)
+    # コンテンツ内リンクで補完
+    content_links = discover_links_from_content(raw_soup, seed_url)
+
+    # sitemap 優先、コンテンツで補完（重複排除）
+    all_links = list(dict.fromkeys(sitemap_links + content_links))
+    print(f"    → sitemap: {len(sitemap_links)} 件, コンテンツ: {len(content_links)} 件, 合計: {len(all_links)} 件")
+
+    # シードページ自体のテキストを取得
+    text = extract_text(raw_soup)
     if text and len(text) > 100:
         results.append((seed_url, text))
 
-    # サブページリンクを発見
-    sub_links = discover_links(soup, seed_url)
-    print(f"    → {len(sub_links)} 件のサブページを発見")
-
     # サブページをクロール（上限あり）
-    for sub_url in sub_links[:max_pages]:
+    for sub_url in all_links[:max_pages]:
         time.sleep(CRAWL_DELAY)
         sub_soup = fetch_page(sub_url)
         if sub_soup is None:
