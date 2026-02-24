@@ -64,6 +64,7 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
 - 詳細な解説を日本語で付けること
 - コードスニペットが関係する場合は具体的な構文を含めること
 - 解説には必ず、参考にしたドキュメントのURL（[Source URL: ...] のもの）と、そのドキュメントからの引用文を記載すること。
+- （Professional試験の場合）可能な限り「あるデータエンジニアが〜という要件を満たすシステムを構築しています」のような、具体的な業務シナリオ（状況設定）をベースとした長文の応用問題を作成すること。単なる用語定義を問う問題は避けること。
 
 ## 出力例（Few-Shot Example）:
 {few_shot_example}
@@ -89,15 +90,15 @@ FEW_SHOT_EXAMPLES = {
 ```""",
     "Data Engineer Professional": """```json
 {
-  "question": "構造化ストリーミングにおける「stream-static join（ストリームと静的テーブルの結合）」に関して、静的 Delta テーブルのバージョンはどのように扱われますか？",
+  "question": "あるデータエンジニアが、Databricks Auto Loader を使用してオンプレミスのシステムからクラウドストレージに継続的に到着する JSON ファイルを取り込み、ブロンズテーブルを構築するデータパイプラインを設計しています。ソースシステムは仕様が頻繁に変更されるため、JSON データには予期しない新しい列や、既存のスキーマとデータ型が異なる競合データが混入する可能性があります。\\nターゲットテーブルへの取り込みにおいて、パイプラインを停止させることなく、これらの未知のデータや型崩れしたデータを確実に保持し、データエンジニアが後から確認・回復できるようにするための最も推奨されるアプローチは何ですか？",
   "choices": [
-    "A. チェックポイントディレクトリを使用して、静的 Delta テーブルへの更新が常にトラッキングされる。",
-    "B. stream-static join の各マイクロバッチは、ジョブ初期化時点での最も新しい静的 Delta テーブルのバージョンを使用する。",
-    "C. マイクロバッチごとに最新の静的 Delta テーブルが読み込まれ、変更がある場合は直ちに結合結果に反映される。",
-    "D. 一貫性の問題があるため、stream-static join では静的 Delta テーブルを使用することはできない。"
+    "A. cloudFiles.inferColumnTypes を true に設定し、cloudFiles.schemaEvolutionMode を addNewColumns にして、すべての新しい列を自動的にブロンズテーブルのスキーマに追加する。",
+    "B. cloudFiles.schemaEvolutionMode を rescue に設定し、予期しないデータやスキーマに一致しないデータを _rescued_data という単一の列にキャプチャするよう構成する。",
+    "C. Delta Lake の .option(\\"mergeSchema\\", \\"true\\") オプションのみでストリームを書き込み、スキーマの変更があった場合は常に例外をスローさせてデータエンジニアに通知する。",
+    "D. 取り込み前に Apache Spark のバッチ処理で一度 json データを読み込み、欠損値や未知の列を持つレコードをフィルタリングして除外してからパイプラインを再開する。"
   ],
   "answer": "B",
-  "explanation": "stream-static join（ストリームデータと静的バッチデータの結合）では、各マイクロバッチはストリーミングジョブの初期化時点での最も新しい静的 Delta テーブルのバージョンを使用します。つまり、ストリーミングジョブが実行中である限り、静的テーブルが途中で更新されても、そのストリーミングジョブ内の各マイクロバッチには更新結果は反映されず一定のバージョンが保たれます。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/structured-streaming/delta-lake.html\\n**引用:** > stream-static join の各マイクロバッチは、ストリームを開始した時点の静的 Delta テーブルの最新バージョンを使用します。"
+  "explanation": "Auto Loader の `rescue` モード（rescued data column）は、予期しないデータ（スキーマに定義されていない新しい列や、データ型の不一致が生じたデータなど）によるデータの損失やパイプラインの停止を防ぐための強力な機能です。このモードを有効にすると、パースに失敗したデータや未知のデータフィールドはすべて JSON 文字列として一時的に `_rescued_data` 列に安全に格納されます。これにより、データエンジニアはパイプラインの継続的な稼働を維持したまま、後から仕様変更を分析して対応することが可能になります。選択肢Aは後方互換性を壊す可能性があり、CとDは継続的な取り込みを妨げたりデータを欠損させるため不適切です。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/ingestion/auto-loader/schema.html\\n**引用:** > The rescued data column ensures that you never lose or miss out on data during ETL. The rescued data column contains any data that wasn't parsed..."
 }
 ```"""
 }
