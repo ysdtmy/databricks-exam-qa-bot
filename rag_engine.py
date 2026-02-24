@@ -170,15 +170,16 @@ class RAGEngine:
             return []
 
         try:
+            # 以前は filters["category"] = category としていたが、
+            # トピック名(UI)とCRAWL_SEEDSのカテゴリ(DB)の不一致による検索漏れを防ぐため、
+            # ハードフィルタを外して純粋な意味的類似度（クエリコンテキスト）による検索に任せる。
             filters = {}
-            if category:
-                filters["category"] = category
 
             results = self.index.similarity_search(
                 query_text=query,
                 columns=["chunk_id", "category", "content", "source_url"],
                 num_results=num_results,
-                filters=filters if filters else None,
+                filters=filters,
             )
 
             docs = []
