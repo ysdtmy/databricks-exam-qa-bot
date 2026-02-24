@@ -25,28 +25,30 @@ except ImportError:
     logger.warning("Databricks SDK が見つかりません。AI 生成モードは使用できません。")
 
 
-# 試験カテゴリ一覧
-EXAM_CATEGORIES = [
-    "Databricks Intelligence Platform",
-    "Development & Ingestion",
-    "Data Processing & Transformations",
-    "Productionizing Data Pipelines",
-    "Data Governance & Quality",
-]
+# シラバスの読み込み
+SYLLABUSES_PATH = os.path.join(os.path.dirname(__file__), "syllabuses.json")
+try:
+    with open(SYLLABUSES_PATH, "r", encoding="utf-8") as f:
+        SYLLABUSES = json.load(f)
+except Exception as e:
+    logger.error(f"シラバスの読み込みエラー: {e}")
+    SYLLABUSES = {"Data Engineer Associate": {"categories": []}}
 
-# カテゴリ別の出題比率（試験勉強モード用）
-CATEGORY_WEIGHTS = {
-    "Databricks Intelligence Platform": 0.10,
-    "Development & Ingestion": 0.30,
-    "Data Processing & Transformations": 0.31,
-    "Productionizing Data Pipelines": 0.18,
-    "Data Governance & Quality": 0.11,
-}
+# デフォルトの対象試験
+TARGET_EXAM = "Data Engineer Associate"
+
+# 現在の試験のカテゴリと比率を取得
+EXAM_CATEGORIES = []
+CATEGORY_WEIGHTS = {}
+if TARGET_EXAM in SYLLABUSES:
+    for cat in SYLLABUSES[TARGET_EXAM].get("categories", []):
+        EXAM_CATEGORIES.append(cat["name"])
+        CATEGORY_WEIGHTS[cat["name"]] = cat["weight"]
 
 # 問題生成プロンプト
 QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問題作成者です。
 
-以下のドキュメントコンテキストに基づいて、Databricks Data Engineer Associate 認定試験に出題されそうな問題を1つ作成してください。
+以下のドキュメントコンテキストに基づいて、Databricks {exam} 認定試験に出題されそうな問題を1つ作成してください。
 
 ## ドキュメントコンテキスト:
 {context}
@@ -62,16 +64,23 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
 - 詳細な解説を日本語で付けること
 - コードスニペットが関係する場合は具体的な構文を含めること
 
-## 出力形式（JSON）:
-以下の JSON 形式で出力してください。JSON以外のテキストは含めないでください。
+## 出力例（Few-Shot Example）:
 ```json
 {{
-  "question": "問題文",
-  "choices": ["A. 選択肢1", "B. 選択肢2", "C. 選択肢3", "D. 選択肢4"],
-  "answer": "正解の記号（A/B/C/D）",
-  "explanation": "解説文"
+  "question": "DataFrame の書き込み操作中に Delta Lake でスキーマ展開（Schema Evolution）を有効にするには、どのオプションを使用する必要がありますか？",
+  "choices": [
+    "A. スキーマ展開はデフォルトで有効になっており、新しい列が自動的に追加される。",
+    "B. .option(\\"mergeSchema\\", \\"true\\") を使用して明示的に有効にする必要がある。",
+    "C. Delta Lake はスキーマ展開をサポートしておらず、テーブルを再作成する必要がある。",
+    "D. ALTER TABLE SQL コマンドを使用した場合のみスキーマ展開が可能である。"
+  ],
+  "answer": "B",
+  "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。"
 }}
 ```
+
+## 出力形式（JSON）:
+上記の出力例と同じ構造の JSON 形式で出力してください。JSON以外のテキストは絶対に含めないでください。
 """
 
 
@@ -165,7 +174,7 @@ class RAGEngine:
             logger.error(f"検索エラー: {e}")
             return []
 
-    def generate_question(self, category: str | None = None) -> dict | None:
+    def generate_question(self, category: str | None = None, exam: str = TARGET_EXAM) -> dict | None:
         """RAG で問題を動的に生成"""
         if not self.is_available:
             return None
@@ -173,58 +182,26 @@ class RAGEngine:
         import random
 
         try:
-            # カテゴリ別サブカテゴリキーワード（毎回ランダム選択で多様性を確保）
+            # 指定された試験のシラバス情報を取得
+            exam_data = SYLLABUSES.get(exam, {"categories": []})
+            
+            # カテゴリ別サブカテゴリキーワードをJSONから構築
             subcategory_queries = {
-                "Databricks Intelligence Platform": [
-                    "Lakehouse architecture Data Intelligence Platform",
-                    "workspace clusters notebooks data storage",
-                    "Delta Lake ACID transactions time travel schema evolution",
-                    "Databricks File System DBFS",
-                    "Databricks Repos Git integration",
-                    "SQL Warehouse endpoints serverless",
-                    "Catalog Explorer data discovery",
-                ],
-                "Development & Ingestion": [
-                    "ETL pipelines Apache Spark SQL Python PySpark",
-                    "relational entities databases tables views",
-                    "creating and manipulating tables CREATE TABLE AS SELECT",
-                    "cleaning and combining data JOIN UNION",
-                    "Auto Loader cloudFiles schema inference evolution",
-                    "streaming ingestion Structured Streaming",
-                    "COPY INTO idempotent ingestion",
-                ],
-                "Data Processing & Transformations": [
-                    "Apache Spark fundamentals architecture",
-                    "data manipulation transformations querying DataFrame API",
-                    "SQL user defined functions UDFs Python",
-                    "data quality cleansing missing values duplicates",
-                    "Structured Streaming triggers watermarks late data",
-                    "optimization techniques data skipping Z-order clustering",
-                ],
-                "Productionizing Data Pipelines": [
-                    "Databricks workflows jobs multi-task orchestration",
-                    "configuring scheduling tasks dependencies",
-                    "Databricks SQL queries dashboards alerts",
-                    "Delta Live Tables DLT declarative framework",
-                    "DLT automatic error handling data quality expectations",
-                    "DLT pipeline event log lineage features",
-                ],
-                "Data Governance & Quality": [
-                    "security best practices Databricks access control",
-                    "Unity Catalog centralized access control auditing lineage",
-                    "Unity Catalog data discovery search metadata",
-                    "entity permissions GRANT REVOKE privileges",
-                    "three-level namespace hierarchy catalog schema table",
-                    "dynamic data masking row-level filters column-level",
-                ],
+                cat["name"]: cat["keywords"] for cat in exam_data.get("categories", [])
             }
+
+            # フォールバック処理（万が一シラバスが空の場合など）
+            if not subcategory_queries:
+                logger.error(f"試験 '{exam}' のシラバスが見つかりません。")
+                return None
 
             if category and category in subcategory_queries:
                 query = random.choice(subcategory_queries[category])
             else:
+                cat_weights = {cat["name"]: cat["weight"] for cat in exam_data.get("categories", [])}
                 category = random.choices(
-                    list(CATEGORY_WEIGHTS.keys()),
-                    weights=list(CATEGORY_WEIGHTS.values()),
+                    list(cat_weights.keys()),
+                    weights=list(cat_weights.values()),
                     k=1,
                 )[0]
                 query = random.choice(subcategory_queries[category])
@@ -242,6 +219,7 @@ class RAGEngine:
 
             # LLM で問題生成
             prompt = QUESTION_GENERATION_PROMPT.format(
+                exam=exam,
                 context=context,
                 category=category or "全般",
             )

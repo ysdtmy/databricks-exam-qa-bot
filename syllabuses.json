@@ -1,0 +1,114 @@
+{
+    "Data Engineer Associate": {
+        "categories": [
+            {
+                "name": "Databricks Intelligence Platform",
+                "weight": 0.10,
+                "keywords": [
+                    "Lakehouse architecture Data Intelligence Platform",
+                    "workspace clusters notebooks data storage",
+                    "Delta Lake ACID transactions time travel schema evolution",
+                    "Databricks File System DBFS",
+                    "Databricks Repos Git integration",
+                    "SQL Warehouse endpoints serverless",
+                    "Catalog Explorer data discovery"
+                ]
+            },
+            {
+                "name": "Development & Ingestion",
+                "weight": 0.30,
+                "keywords": [
+                    "ETL pipelines Apache Spark SQL Python PySpark",
+                    "relational entities databases tables views",
+                    "creating and manipulating tables CREATE TABLE AS SELECT",
+                    "cleaning and combining data JOIN UNION",
+                    "Auto Loader cloudFiles schema inference evolution",
+                    "streaming ingestion Structured Streaming",
+                    "COPY INTO idempotent ingestion"
+                ]
+            },
+            {
+                "name": "Data Processing & Transformations",
+                "weight": 0.31,
+                "keywords": [
+                    "Apache Spark fundamentals architecture",
+                    "data manipulation transformations querying DataFrame API",
+                    "SQL user defined functions UDFs Python",
+                    "data quality cleansing missing values duplicates",
+                    "Structured Streaming triggers watermarks late data",
+                    "optimization techniques data skipping Z-order clustering"
+                ]
+            },
+            {
+                "name": "Productionizing Data Pipelines",
+                "weight": 0.18,
+                "keywords": [
+                    "Databricks workflows jobs multi-task orchestration",
+                    "configuring scheduling tasks dependencies",
+                    "Databricks SQL queries dashboards alerts",
+                    "Delta Live Tables DLT declarative framework",
+                    "DLT automatic error handling data quality expectations",
+                    "DLT pipeline event log lineage features"
+                ]
+            },
+            {
+                "name": "Data Governance & Quality",
+                "weight": 0.11,
+                "keywords": [
+                    "security best practices Databricks access control",
+                    "Unity Catalog centralized access control auditing lineage",
+                    "Unity Catalog data discovery search metadata",
+                    "entity permissions GRANT REVOKE privileges",
+                    "three-level namespace hierarchy catalog schema table",
+                    "dynamic data masking row-level filters column-level"
+                ]
+            }
+        ]
+    },
+    "Data Engineer Professional": {
+        "categories": [
+            {
+                "name": "Databricks Tooling",
+                "weight": 0.20,
+                "keywords": [
+                    "Databricks REST API",
+                    "Databricks CLI",
+                    "Databricks Terraform Provider",
+                    "CI/CD with Databricks",
+                    "monitoring, logging, and observability"
+                ]
+            },
+            {
+                "name": "Data Processing",
+                "weight": 0.30,
+                "keywords": [
+                    "advanced Spark architecture",
+                    "performance tuning and troubleshooting",
+                    "handling skew and spill",
+                    "optimizing joins and aggregations",
+                    "advanced Delta Lake features"
+                ]
+            },
+            {
+                "name": "Data Modeling",
+                "weight": 0.20,
+                "keywords": [
+                    "Medallion architecture patterns",
+                    "slowly changing dimensions SCD Type 1 Type 2",
+                    "change data capture CDC applying changes",
+                    "stream-stream joins stateful streaming"
+                ]
+            },
+            {
+                "name": "Security and Governance",
+                "weight": 0.30,
+                "keywords": [
+                    "Unity Catalog advanced features",
+                    "row-level and column-level security patterns",
+                    "secure data sharing with Delta Sharing",
+                    "identity and access management IAM"
+                ]
+            }
+        ]
+    }
+}
