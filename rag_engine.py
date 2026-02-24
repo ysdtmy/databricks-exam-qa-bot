@@ -63,6 +63,7 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
 - 必ず1つの正解があること
 - 詳細な解説を日本語で付けること
 - コードスニペットが関係する場合は具体的な構文を含めること
+- 解説には必ず、参考にしたドキュメントのURL（[Source URL: ...] のもの）と、そのドキュメントからの引用文を記載すること。
 
 ## 出力例（Few-Shot Example）:
 ```json
@@ -75,7 +76,7 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
     "D. ALTER TABLE SQL コマンドを使用した場合のみスキーマ展開が可能である。"
   ],
   "answer": "B",
-  "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。"
+  "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/delta/update-schema.html\\n**引用:** > You can explicitly allow schema evolution by specifying the option `mergeSchema` to `true`."
 }}
 ```
 
@@ -208,14 +209,20 @@ class RAGEngine:
 
             logger.info(f"検索クエリ: [{category}] {query}")
 
-            # ドキュメント検索（TOP 10 で十分なコンテキストを取得）
-            docs = self.search_documents(query, category=category, num_results=10)
+            # ドキュメント検索（多様性を持たせるため TOP 20 を取得）
+            docs = self.search_documents(query, category=category, num_results=20)
             if not docs:
                 logger.warning("検索結果が0件。静的問題にフォールバックします。")
                 return None
 
-            # コンテキスト作成
-            context = "\n\n---\n\n".join([doc["content"] for doc in docs])
+            # 検索結果からランダムに 3〜5 件をサンプリング（問題の重複を防ぐため）
+            docs_sample = random.sample(docs, min(len(docs), random.randint(3, 5)))
+
+            # コンテキスト作成 (URLを含める)
+            context_parts = []
+            for doc in docs_sample:
+                context_parts.append(f"[Source URL: {doc.get('source_url', 'URL不明')}]\n{doc['content']}")
+            context = "\n\n---\n\n".join(context_parts)
 
             # LLM で問題生成
             prompt = QUESTION_GENERATION_PROMPT.format(
