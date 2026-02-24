@@ -285,26 +285,35 @@ class RAGEngine:
     def _parse_question_response(self, response_text: str) -> dict | None:
         """LLM レスポンスから問題 JSON をパース"""
         try:
-            # JSON ブロックを抽出
-            json_match = re.search(r"```json\s*(.*?)\s*```", response_text, re.DOTALL)
+            # { } で囲まれた部分を抽出（マークダウンの欠落や余計なテキストの混入対策）
+            # まずは ```json ... ``` を探す (json の文字は大文字小文字問わず、無くてもよい)
+            json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL | re.IGNORECASE)
             if json_match:
                 json_str = json_match.group(1)
             else:
-                # JSON ブロックがない場合、テキスト全体を試行
-                json_str = response_text
+                # ブロックが見つからない場合、最初に見つけた { から最後の } までを抽出
+                start_idx = response_text.find("{")
+                end_idx = response_text.rfind("}")
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    json_str = response_text[start_idx:end_idx + 1]
+                else:
+                    json_str = response_text
 
-            data = json.loads(json_str)
+            # JSONパース（生制御文字のエラーを許容するため strict=False）
+            data = json.loads(json_str, strict=False)
 
             # 必須フィールドの検証
             required_fields = ["question", "choices", "answer", "explanation"]
             if all(field in data for field in required_fields):
-                if len(data["choices"]) == 4 and data["answer"] in ["A", "B", "C", "D"]:
-                    return data
+                # choices がリストであり、4つの要素を持つか確認
+                if isinstance(data["choices"], list) and len(data["choices"]) == 4:
+                    if data["answer"] in ["A", "B", "C", "D"]:
+                        return data
 
             logger.warning(f"問題データの検証に失敗: {data}")
             return None
 
-        except (json.JSONDecodeError, KeyError, IndexError) as e:
+        except (json.JSONDecodeError, KeyError, IndexError, TypeError) as e:
             logger.error(f"JSON パースエラー: {e}")
-            logger.error(f"レスポンス: {response_text[:500]}")
+            logger.error(f"レスポンス先頭500文字: {response_text[:500]}")
             return None
