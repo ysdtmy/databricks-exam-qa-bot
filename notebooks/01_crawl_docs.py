@@ -82,6 +82,8 @@ CRAWL_SEEDS = {
         "https://docs.databricks.com/aws/en/udf/",
         "https://docs.databricks.com/aws/en/optimizations/",
         "https://docs.databricks.com/aws/en/delta/data-skipping",
+        "https://docs.databricks.com/aws/en/ingestion/history-tracking",
+        "https://docs.databricks.com/aws/en/ingestion/auto-cdc-api",
     ],
     "Productionizing Data Pipelines": [
         "https://docs.databricks.com/aws/en/delta-live-tables/",
@@ -111,6 +113,10 @@ CRAWL_SEEDS = {
         "https://docs.databricks.com/aws/en/delta/clustering",       
         "https://docs.databricks.com/aws/en/delta/deletion-vectors", 
         "https://docs.databricks.com/aws/en/optimizations/query-profiler", 
+    ],
+    "Data Modelling": [
+        "https://docs.databricks.com/aws/en/lakehouse/medallion",
+        "https://docs.databricks.com/aws/en/delta/sql/merge",
     ]
 }
 

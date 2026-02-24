@@ -455,7 +455,9 @@ def create_app():
             with gr.Column(visible=False) as feedback_box:
                 feedback_content = gr.Markdown("", elem_classes=["feedback-box"])
 
-            next_btn = gr.Button("次の問題 →", variant="secondary", size="lg", visible=False, elem_classes=["next-btn"])
+            with gr.Row():
+                next_btn = gr.Button("次の問題 →", variant="secondary", size="lg", visible=False, elem_classes=["next-btn"])
+                back_to_top_btn_quiz = gr.Button("🔄 トップに戻る", variant="stop", size="lg", visible=True)
 
         # ============================
         # 結果ページ
@@ -478,7 +480,17 @@ def create_app():
             outputs=[topic_selector]
         )
 
+        def set_loading_state_start():
+            return gr.update(value="🚀 問題を生成中... (約10秒)", interactive=False)
+
+        def set_loading_state_next():
+            return gr.update(value="⏳ 次の問題を生成中...", interactive=False)
+
         start_btn.click(
+            fn=set_loading_state_start,
+            inputs=[],
+            outputs=[start_btn],
+        ).then(
             fn=on_start,
             inputs=[exam_selector, mode_selector, topic_selector],
             outputs=[
@@ -486,6 +498,11 @@ def create_app():
                 category_label, question_text, answer_radio, progress_text,
                 feedback_box, feedback_content, submit_btn, next_btn,
             ],
+            show_progress="full",
+        ).then(
+            fn=lambda: gr.update(value="🚀 試験を開始する", interactive=True),
+            inputs=[],
+            outputs=[start_btn],
         )
 
         submit_btn.click(
@@ -498,6 +515,10 @@ def create_app():
         )
 
         next_btn.click(
+            fn=set_loading_state_next,
+            inputs=[],
+            outputs=[next_btn],
+        ).then(
             fn=on_next,
             inputs=[state],
             outputs=[
@@ -505,9 +526,20 @@ def create_app():
                 category_label, question_text, answer_radio, progress_text,
                 feedback_box, feedback_content, submit_btn, next_btn,
             ],
+            show_progress="full",
+        ).then(
+            fn=lambda: gr.update(value="次の問題 →", interactive=True),
+            inputs=[],
+            outputs=[next_btn],
         )
 
         back_btn.click(
+            fn=on_back_to_top,
+            inputs=[],
+            outputs=[top_page, quiz_page, result_page],
+        )
+
+        back_to_top_btn_quiz.click(
             fn=on_back_to_top,
             inputs=[],
             outputs=[top_page, quiz_page, result_page],
