@@ -63,7 +63,8 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
 - 必ず1つの正解があること
 - 詳細な解説を日本語で付けること
 - コードスニペットが関係する場合は具体的な構文を含めること
-- 解説には必ず、参考にしたドキュメントのURL（[Source URL: ...] のもの）と、そのドキュメントからの引用文を記載すること。
+- 解説の最後には必ず、参考にしたドキュメントへのリンクをマークダウン形式 `[参考ドキュメント](URL)` で記載すること。コンテキストの `[Source URL: https://...]` から URLのみを抽出し、末尾に `]` などの余計な文字を含めないこと。
+- そのドキュメントからの引用文も併せて記載すること。
 - （Professional試験の場合）可能な限り「あるデータエンジニアが〜という要件を満たすシステムを構築しています」のような、具体的な業務シナリオ（状況設定）をベースとした長文の応用問題を作成すること。単なる用語定義を問う問題は避けること。
 
 ## 出力例（Few-Shot Example）:
@@ -85,7 +86,7 @@ FEW_SHOT_EXAMPLES = {
     "D. ALTER TABLE SQL コマンドを使用した場合のみスキーマ展開が可能である。"
   ],
   "answer": "B",
-  "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/delta/update-schema.html\\n**引用:** > You can explicitly allow schema evolution by specifying the option `mergeSchema` to `true`."
+  "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。\\n\\n[参考ドキュメント](https://docs.databricks.com/ja/delta/update-schema.html)\\n**引用:** > You can explicitly allow schema evolution by specifying the option `mergeSchema` to `true`."
 }
 ```""",
     "Data Engineer Professional": """```json
@@ -98,7 +99,7 @@ FEW_SHOT_EXAMPLES = {
     "D. 取り込み前に Apache Spark のバッチ処理で一度 json データを読み込み、欠損値や未知の列を持つレコードをフィルタリングして除外してからパイプラインを再開する。"
   ],
   "answer": "B",
-  "explanation": "Auto Loader の `rescue` モード（rescued data column）は、予期しないデータ（スキーマに定義されていない新しい列や、データ型の不一致が生じたデータなど）によるデータの損失やパイプラインの停止を防ぐための強力な機能です。このモードを有効にすると、パースに失敗したデータや未知のデータフィールドはすべて JSON 文字列として一時的に `_rescued_data` 列に安全に格納されます。これにより、データエンジニアはパイプラインの継続的な稼働を維持したまま、後から仕様変更を分析して対応することが可能になります。選択肢Aは後方互換性を壊す可能性があり、CとDは継続的な取り込みを妨げたりデータを欠損させるため不適切です。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/ingestion/auto-loader/schema.html\\n**引用:** > The rescued data column ensures that you never lose or miss out on data during ETL. The rescued data column contains any data that wasn't parsed..."
+  "explanation": "Auto Loader の `rescue` モード（rescued data column）は、予期しないデータ（スキーマに定義されていない新しい列や、データ型の不一致が生じたデータなど）によるデータの損失やパイプラインの停止を防ぐための強力な機能です。このモードを有効にすると、パースに失敗したデータや未知のデータフィールドはすべて JSON 文字列として一時的に `_rescued_data` 列に安全に格納されます。これにより、データエンジニアはパイプラインの継続的な稼働を維持したまま、後から仕様変更を分析して対応することが可能になります。選択肢Aは後方互換性を壊す可能性があり、CとDは継続的な取り込みを妨げたりデータを欠損させるため不適切です。\\n\\n[参考ドキュメント](https://docs.databricks.com/ja/ingestion/auto-loader/schema.html)\\n**引用:** > The rescued data column ensures that you never lose or miss out on data during ETL. The rescued data column contains any data that wasn't parsed..."
 }
 ```"""
 }
