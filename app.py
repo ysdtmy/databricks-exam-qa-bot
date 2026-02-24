@@ -455,9 +455,10 @@ def create_app():
             with gr.Column(visible=False) as feedback_box:
                 feedback_content = gr.Markdown("", elem_classes=["feedback-box"])
 
-            with gr.Row():
-                next_btn = gr.Button("次の問題 →", variant="secondary", size="lg", visible=False, elem_classes=["next-btn"])
-                back_to_top_btn_quiz = gr.Button("🔄 トップに戻る", variant="stop", size="lg", visible=True)
+            next_btn = gr.Button("次の問題 →", variant="secondary", size="lg", visible=False, elem_classes=["next-btn"])
+            
+            gr.Markdown("<br>")
+            back_to_top_btn_quiz = gr.Button("🚪 試験を中断してトップに戻る", variant="stop", size="sm", visible=True)
 
         # ============================
         # 結果ページ
