@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 try:
     from databricks.vector_search.client import VectorSearchClient
     from databricks.sdk import WorkspaceClient
+    from databricks.sdk.service.serving import ChatMessage
+    from databricks.sdk.service.serving import ChatMessageRole
 
     HAS_DATABRICKS = True
 except ImportError:
@@ -168,27 +170,77 @@ class RAGEngine:
         if not self.is_available:
             return None
 
+        import random
+
         try:
-            # カテゴリに基づいた検索クエリ
-            search_queries = {
-                "Databricks Intelligence Platform": "Databricks workspace cluster compute SQL notebook",
-                "Development & Ingestion": "Delta Lake Auto Loader COPY INTO merge upsert medallion",
-                "Data Processing & Transformations": "Spark DataFrame SQL transformation streaming window",
-                "Productionizing Data Pipelines": "Delta Live Tables DLT workflow job schedule pipeline",
-                "Data Governance & Quality": "Unity Catalog governance access control data quality",
+            # カテゴリ別サブカテゴリキーワード（毎回ランダム選択で多様性を確保）
+            subcategory_queries = {
+                "Databricks Intelligence Platform": [
+                    "cluster types all-purpose job compute serverless",
+                    "SQL warehouse create configure scaling",
+                    "notebook workspace collaboration features",
+                    "Databricks repos Git version control integration",
+                    "DBFS Unity Catalog volumes file storage",
+                    "compute access mode shared single user isolation",
+                    "cluster pool instance configuration autoscaling",
+                    "Databricks Runtime versions Photon engine",
+                ],
+                "Development & Ingestion": [
+                    "Delta Lake table create write modes overwrite append",
+                    "MERGE INTO upsert matched not matched conditions",
+                    "Auto Loader cloudFiles schema inference evolution",
+                    "COPY INTO idempotent ingestion external files",
+                    "medallion architecture bronze silver gold layers",
+                    "Delta table history time travel restore version",
+                    "schema evolution merge schema auto migration",
+                    "external tables managed tables location storage",
+                    "streaming ingestion incremental data loading",
+                ],
+                "Data Processing & Transformations": [
+                    "Spark DataFrame transformations filter select join",
+                    "SQL window functions aggregate ranking",
+                    "Structured Streaming trigger processing time",
+                    "watermark late data handling state management",
+                    "UDF user defined functions Python registration",
+                    "adaptive query execution Spark optimization",
+                    "caching persist unpersist DataFrame performance",
+                    "data skipping Z-order liquid clustering",
+                    "higher order functions array transform",
+                ],
+                "Productionizing Data Pipelines": [
+                    "Delta Live Tables DLT pipeline configuration",
+                    "DLT expectations data quality constraints",
+                    "workflow job orchestration scheduling trigger",
+                    "job cluster task dependencies retry policy",
+                    "DLT streaming tables materialized views",
+                    "pipeline observability monitoring event log",
+                    "multi-task job workflow parameters variables",
+                ],
+                "Data Governance & Quality": [
+                    "Unity Catalog three-level namespace catalog schema",
+                    "access control GRANT REVOKE privileges permissions",
+                    "data lineage tracking column-level provenance",
+                    "row filters column masks dynamic data masking",
+                    "DLT expectations constraint violation handling",
+                    "managed storage external locations credentials",
+                    "metastore setup workspace assignment binding",
+                ],
             }
 
-            if category and category in search_queries:
-                query = search_queries[category]
+            if category and category in subcategory_queries:
+                query = random.choice(subcategory_queries[category])
             else:
-                # ランダムクエリ
-                import random
-                query = random.choice(list(search_queries.values()))
-                if not category:
-                    category = [k for k, v in search_queries.items() if v == query][0]
+                category = random.choices(
+                    list(CATEGORY_WEIGHTS.keys()),
+                    weights=list(CATEGORY_WEIGHTS.values()),
+                    k=1,
+                )[0]
+                query = random.choice(subcategory_queries[category])
 
-            # ドキュメント検索
-            docs = self.search_documents(query, category=category, num_results=3)
+            logger.info(f"検索クエリ: [{category}] {query}")
+
+            # ドキュメント検索（TOP 10 で十分なコンテキストを取得）
+            docs = self.search_documents(query, category=category, num_results=10)
             if not docs:
                 logger.warning("検索結果が0件。静的問題にフォールバックします。")
                 return None
@@ -205,8 +257,11 @@ class RAGEngine:
             response = self.workspace_client.serving_endpoints.query(
                 name=self.serving_endpoint,
                 messages=[
-                    {"role": "system", "content": "あなたは Databricks 認定資格試験の問題作成エキスパートです。指定された JSON 形式で正確に出力してください。"},
-                    {"role": "user", "content": prompt},
+                    ChatMessage(
+                        role=ChatMessageRole.SYSTEM,
+                        content="あなたは Databricks 認定資格試験の問題作成エキスパートです。指定された JSON 形式で正確に出力してください。",
+                    ),
+                    ChatMessage(role=ChatMessageRole.USER, content=prompt),
                 ],
                 max_tokens=1024,
                 temperature=0.7,

@@ -60,7 +60,7 @@ def get_next_question(state: dict) -> dict | None:
         category = random.choices(cats, weights=weights, k=1)[0]
 
     question = None
-    if rag_engine.is_available and random.random() < 0.5:
+    if rag_engine.is_available:
         question = rag_engine.generate_question(category=category)
 
     if question is None:
