@@ -267,7 +267,7 @@ class RAGEngine:
                             ),
                             ChatMessage(role=ChatMessageRole.USER, content=prompt),
                         ],
-                        max_tokens=1024,
+                        max_tokens=4096,
                         temperature=0.7,
                     )
 
@@ -334,5 +334,5 @@ class RAGEngine:
 
         except (json.JSONDecodeError, KeyError, IndexError, TypeError) as e:
             logger.error(f"JSON パースエラー: {e}")
-            logger.error(f"レスポンス先頭500文字: {response_text[:500]}")
+            logger.error(f"レスポンスの末尾200文字: {response_text[-200:]}")
             return None
