@@ -470,7 +470,7 @@ def create_app():
         
         def update_topics_for_exam(exam: str):
             cats = [cat["name"] for cat in SYLLABUSES.get(exam, {"categories": []}).get("categories", [])]
-            return gr.Dropdown(choices=cats, value=cats[0] if cats else None)
+            return gr.update(choices=cats, value=cats[0] if cats else None)
 
         exam_selector.change(
             fn=update_topics_for_exam,
