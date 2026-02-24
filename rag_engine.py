@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 try:
     from databricks.vector_search.client import VectorSearchClient
     from databricks.sdk import WorkspaceClient
+    from databricks.sdk.service.serving import ChatMessage
+    from databricks.sdk.service.serving import ChatMessageRole
 
     HAS_DATABRICKS = True
 except ImportError:
@@ -23,28 +25,30 @@ except ImportError:
     logger.warning("Databricks SDK が見つかりません。AI 生成モードは使用できません。")
 
 
-# 試験カテゴリ一覧
-EXAM_CATEGORIES = [
-    "Databricks Intelligence Platform",
-    "Development & Ingestion",
-    "Data Processing & Transformations",
-    "Productionizing Data Pipelines",
-    "Data Governance & Quality",
-]
+# シラバスの読み込み
+SYLLABUSES_PATH = os.path.join(os.path.dirname(__file__), "syllabuses.json")
+try:
+    with open(SYLLABUSES_PATH, "r", encoding="utf-8") as f:
+        SYLLABUSES = json.load(f)
+except Exception as e:
+    logger.error(f"シラバスの読み込みエラー: {e}")
+    SYLLABUSES = {"Data Engineer Associate": {"categories": []}}
 
-# カテゴリ別の出題比率（試験勉強モード用）
-CATEGORY_WEIGHTS = {
-    "Databricks Intelligence Platform": 0.10,
-    "Development & Ingestion": 0.30,
-    "Data Processing & Transformations": 0.31,
-    "Productionizing Data Pipelines": 0.18,
-    "Data Governance & Quality": 0.11,
-}
+# デフォルトの対象試験
+TARGET_EXAM = "Data Engineer Associate"
+
+# 現在の試験のカテゴリと比率を取得
+EXAM_CATEGORIES = []
+CATEGORY_WEIGHTS = {}
+if TARGET_EXAM in SYLLABUSES:
+    for cat in SYLLABUSES[TARGET_EXAM].get("categories", []):
+        EXAM_CATEGORIES.append(cat["name"])
+        CATEGORY_WEIGHTS[cat["name"]] = cat["weight"]
 
 # 問題生成プロンプト
 QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問題作成者です。
 
-以下のドキュメントコンテキストに基づいて、Databricks Data Engineer Associate 認定試験に出題されそうな問題を1つ作成してください。
+以下のドキュメントコンテキストに基づいて、Databricks {exam} 認定試験に出題されそうな問題を1つ作成してください。
 
 ## ドキュメントコンテキスト:
 {context}
@@ -60,16 +64,23 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
 - 詳細な解説を日本語で付けること
 - コードスニペットが関係する場合は具体的な構文を含めること
 
-## 出力形式（JSON）:
-以下の JSON 形式で出力してください。JSON以外のテキストは含めないでください。
+## 出力例（Few-Shot Example）:
 ```json
 {{
-  "question": "問題文",
-  "choices": ["A. 選択肢1", "B. 選択肢2", "C. 選択肢3", "D. 選択肢4"],
-  "answer": "正解の記号（A/B/C/D）",
-  "explanation": "解説文"
+  "question": "DataFrame の書き込み操作中に Delta Lake でスキーマ展開（Schema Evolution）を有効にするには、どのオプションを使用する必要がありますか？",
+  "choices": [
+    "A. スキーマ展開はデフォルトで有効になっており、新しい列が自動的に追加される。",
+    "B. .option(\\"mergeSchema\\", \\"true\\") を使用して明示的に有効にする必要がある。",
+    "C. Delta Lake はスキーマ展開をサポートしておらず、テーブルを再作成する必要がある。",
+    "D. ALTER TABLE SQL コマンドを使用した場合のみスキーマ展開が可能である。"
+  ],
+  "answer": "B",
+  "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。"
 }}
 ```
+
+## 出力形式（JSON）:
+上記の出力例と同じ構造の JSON 形式で出力してください。JSON以外のテキストは絶対に含めないでください。
 """
 
 
@@ -163,32 +174,42 @@ class RAGEngine:
             logger.error(f"検索エラー: {e}")
             return []
 
-    def generate_question(self, category: str | None = None) -> dict | None:
+    def generate_question(self, category: str | None = None, exam: str = TARGET_EXAM) -> dict | None:
         """RAG で問題を動的に生成"""
         if not self.is_available:
             return None
 
+        import random
+
         try:
-            # カテゴリに基づいた検索クエリ
-            search_queries = {
-                "Databricks Intelligence Platform": "Databricks workspace cluster compute SQL notebook",
-                "Development & Ingestion": "Delta Lake Auto Loader COPY INTO merge upsert medallion",
-                "Data Processing & Transformations": "Spark DataFrame SQL transformation streaming window",
-                "Productionizing Data Pipelines": "Delta Live Tables DLT workflow job schedule pipeline",
-                "Data Governance & Quality": "Unity Catalog governance access control data quality",
+            # 指定された試験のシラバス情報を取得
+            exam_data = SYLLABUSES.get(exam, {"categories": []})
+            
+            # カテゴリ別サブカテゴリキーワードをJSONから構築
+            subcategory_queries = {
+                cat["name"]: cat["keywords"] for cat in exam_data.get("categories", [])
             }
 
-            if category and category in search_queries:
-                query = search_queries[category]
-            else:
-                # ランダムクエリ
-                import random
-                query = random.choice(list(search_queries.values()))
-                if not category:
-                    category = [k for k, v in search_queries.items() if v == query][0]
+            # フォールバック処理（万が一シラバスが空の場合など）
+            if not subcategory_queries:
+                logger.error(f"試験 '{exam}' のシラバスが見つかりません。")
+                return None
 
-            # ドキュメント検索
-            docs = self.search_documents(query, category=category, num_results=3)
+            if category and category in subcategory_queries:
+                query = random.choice(subcategory_queries[category])
+            else:
+                cat_weights = {cat["name"]: cat["weight"] for cat in exam_data.get("categories", [])}
+                category = random.choices(
+                    list(cat_weights.keys()),
+                    weights=list(cat_weights.values()),
+                    k=1,
+                )[0]
+                query = random.choice(subcategory_queries[category])
+
+            logger.info(f"検索クエリ: [{category}] {query}")
+
+            # ドキュメント検索（TOP 10 で十分なコンテキストを取得）
+            docs = self.search_documents(query, category=category, num_results=10)
             if not docs:
                 logger.warning("検索結果が0件。静的問題にフォールバックします。")
                 return None
@@ -198,6 +219,7 @@ class RAGEngine:
 
             # LLM で問題生成
             prompt = QUESTION_GENERATION_PROMPT.format(
+                exam=exam,
                 context=context,
                 category=category or "全般",
             )
@@ -205,8 +227,11 @@ class RAGEngine:
             response = self.workspace_client.serving_endpoints.query(
                 name=self.serving_endpoint,
                 messages=[
-                    {"role": "system", "content": "あなたは Databricks 認定資格試験の問題作成エキスパートです。指定された JSON 形式で正確に出力してください。"},
-                    {"role": "user", "content": prompt},
+                    ChatMessage(
+                        role=ChatMessageRole.SYSTEM,
+                        content="あなたは Databricks 認定資格試験の問題作成エキスパートです。指定された JSON 形式で正確に出力してください。",
+                    ),
+                    ChatMessage(role=ChatMessageRole.USER, content=prompt),
                 ],
                 max_tokens=1024,
                 temperature=0.7,

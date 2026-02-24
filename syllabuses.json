@@ -1,0 +1,166 @@
+{
+    "Data Engineer Associate": {
+        "categories": [
+            {
+                "name": "Databricks Intelligence Platform",
+                "weight": 0.10,
+                "keywords": [
+                    "Lakehouse architecture Data Intelligence Platform",
+                    "workspace clusters notebooks data storage",
+                    "Delta Lake ACID transactions time travel schema evolution",
+                    "Databricks File System DBFS",
+                    "Databricks Repos Git integration",
+                    "SQL Warehouse endpoints serverless",
+                    "Catalog Explorer data discovery"
+                ]
+            },
+            {
+                "name": "Development & Ingestion",
+                "weight": 0.30,
+                "keywords": [
+                    "ETL pipelines Apache Spark SQL Python PySpark",
+                    "relational entities databases tables views",
+                    "creating and manipulating tables CREATE TABLE AS SELECT",
+                    "cleaning and combining data JOIN UNION",
+                    "Auto Loader cloudFiles schema inference evolution",
+                    "streaming ingestion Structured Streaming",
+                    "COPY INTO idempotent ingestion"
+                ]
+            },
+            {
+                "name": "Data Processing & Transformations",
+                "weight": 0.31,
+                "keywords": [
+                    "Apache Spark fundamentals architecture",
+                    "data manipulation transformations querying DataFrame API",
+                    "SQL user defined functions UDFs Python",
+                    "data quality cleansing missing values duplicates",
+                    "Structured Streaming triggers watermarks late data",
+                    "optimization techniques data skipping Z-order clustering"
+                ]
+            },
+            {
+                "name": "Productionizing Data Pipelines",
+                "weight": 0.18,
+                "keywords": [
+                    "Databricks workflows jobs multi-task orchestration",
+                    "configuring scheduling tasks dependencies",
+                    "Databricks SQL queries dashboards alerts",
+                    "Delta Live Tables DLT declarative framework",
+                    "DLT automatic error handling data quality expectations",
+                    "DLT pipeline event log lineage features"
+                ]
+            },
+            {
+                "name": "Data Governance & Quality",
+                "weight": 0.11,
+                "keywords": [
+                    "security best practices Databricks access control",
+                    "Unity Catalog centralized access control auditing lineage",
+                    "Unity Catalog data discovery search metadata",
+                    "entity permissions GRANT REVOKE privileges",
+                    "three-level namespace hierarchy catalog schema table",
+                    "dynamic data masking row-level filters column-level"
+                ]
+            }
+        ]
+    },
+    "Data Engineer Professional": {
+        "categories": [
+            {
+                "name": "Developing Code for Data Processing using Python and SQL",
+                "weight": 0.22,
+                "keywords": [
+                    "scalable Python project structures Databricks Asset Bundles DABs",
+                    "third-party library installations dependencies init scripts",
+                    "User-Defined Functions UDFs Pandas Python",
+                    "ETL pipelines Lakeflow Spark Declarative Pipelines SQL Apache Spark"
+                ]
+            },
+            {
+                "name": "Data Ingestion & Acquisition",
+                "weight": 0.07,
+                "keywords": [
+                    "data ingestion pipelines Auto Loader cloudFiles schema inference",
+                    "streaming ingestion complex data formats JSON XML",
+                    "COPY INTO idempotent scalable ingestion"
+                ]
+            },
+            {
+                "name": "Data Transformation, Cleansing, and Quality",
+                "weight": 0.10,
+                "keywords": [
+                    "advanced data transformations Spark SQL PySpark",
+                    "window functions joins aggregations group by",
+                    "data quality expectations constraints Delta Live Tables"
+                ]
+            },
+            {
+                "name": "Data Sharing and Federation",
+                "weight": 0.05,
+                "keywords": [
+                    "Lakehouse Federation setup external databases PostgreSQL MySQL",
+                    "Delta Sharing share live data without copying provider recipient"
+                ]
+            },
+            {
+                "name": "Monitoring and Alerting",
+                "weight": 0.10,
+                "keywords": [
+                    "system tables Query Profiler UI Spark UI DAG",
+                    "monitoring resource utilization cost auditing workspace",
+                    "Databricks REST APIs CLI workload monitoring automation",
+                    "notification job status failure performance issues webhooks"
+                ]
+            },
+            {
+                "name": "Cost & Performance Optimization",
+                "weight": 0.13,
+                "keywords": [
+                    "Delta optimization deletion vectors liquid clustering Z-order",
+                    "data skipping file pruning large datasets statistics",
+                    "analyzing query profiles identifying bottlenecks spill skew",
+                    "Unity Catalog managed tables operational overhead serverless"
+                ]
+            },
+            {
+                "name": "Ensuring Data Security and Compliance",
+                "weight": 0.10,
+                "keywords": [
+                    "data security ACLs access control lists workspace permissions",
+                    "PII masking compliant batch streaming pipelines anonymization",
+                    "data purging solutions retention policies right to be forgotten GDPR"
+                ]
+            },
+            {
+                "name": "Data Governance",
+                "weight": 0.07,
+                "keywords": [
+                    "metadata data discoverability Catalog Explorer tags documentation",
+                    "Unity Catalog permission inheritance model grant revoke lineage",
+                    "external locations storage credentials managed tables"
+                ]
+            },
+            {
+                "name": "Debugging and Deploying",
+                "weight": 0.10,
+                "keywords": [
+                    "Spark UI cluster logs troubleshooting errors OOM",
+                    "debugging pipelines Lakeflow Declarative Pipelines event logs",
+                    "building deploying resources Databricks Asset Bundles DABs templates",
+                    "CI/CD workflows Git integration Repos automation pipelines"
+                ]
+            },
+            {
+                "name": "Data Modelling",
+                "weight": 0.06,
+                "keywords": [
+                    "designing scalable data models Delta Lake partitioning",
+                    "simplifying data layout Liquid Clustering dimensional models",
+                    "analytical workloads Medallion Architecture Bronze Silver Gold",
+                    "slowly changing dimensions SCD Type 1 Type 2 CDC merge"
+                ]
+            }
+        ]
+    }
+}
