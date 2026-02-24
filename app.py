@@ -15,10 +15,21 @@ import random
 import logging
 import gradio as gr
 
-from rag_engine import RAGEngine, EXAM_CATEGORIES, CATEGORY_WEIGHTS
+from rag_engine import RAGEngine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# シラバスの読み込み
+SYLLABUSES_PATH = os.path.join(os.path.dirname(__file__), "syllabuses.json")
+try:
+    with open(SYLLABUSES_PATH, "r", encoding="utf-8") as f:
+        SYLLABUSES = json.load(f)
+except Exception as e:
+    logger.error(f"シラバスの読み込みエラー: {e}")
+    SYLLABUSES = {"Data Engineer Associate": {"categories": []}}
+
+AVAILABLE_EXAMS = list(SYLLABUSES.keys())
 
 # 設定
 QUESTIONS_PER_SESSION = 20
@@ -52,16 +63,21 @@ def get_static_questions_for_session(category: str | None = None) -> list[dict]:
 
 
 def get_next_question(state: dict) -> dict | None:
+    exam = state.get("exam", AVAILABLE_EXAMS[0])
     category = state.get("topic")
 
-    if not category:
-        cats = list(CATEGORY_WEIGHTS.keys())
-        weights = list(CATEGORY_WEIGHTS.values())
+    # 指定試験のカテゴリリストとウェイトを取得
+    exam_data = SYLLABUSES.get(exam, {"categories": []})
+    cat_weights = {cat["name"]: cat["weight"] for cat in exam_data.get("categories", [])}
+
+    if not category and cat_weights:
+        cats = list(cat_weights.keys())
+        weights = list(cat_weights.values())
         category = random.choices(cats, weights=weights, k=1)[0]
 
     question = None
     if rag_engine.is_available:
-        question = rag_engine.generate_question(category=category)
+        question = rag_engine.generate_question(category=category, exam=exam)
 
     if question is None:
         pool = state.get("static_pool", [])
@@ -83,15 +99,16 @@ def get_next_question(state: dict) -> dict | None:
     return question
 
 
-def init_state(mode: str, topic: str) -> dict:
+def init_state(exam: str, mode: str, topic: str) -> dict:
     state = {
+        "exam": exam,
         "mode": mode,
         "topic": topic if mode == "📂 トピック別モード" else None,
         "current_index": 0,
         "score": 0,
         "answered": 0,
         "current_question": None,
-        "category_scores": {cat: [0, 0] for cat in EXAM_CATEGORIES},
+        "category_scores": {cat["name"]: [0, 0] for cat in SYLLABUSES.get(exam, {"categories": []}).get("categories", [])},
         "finished": False,
     }
     category = state["topic"]
@@ -135,9 +152,9 @@ def format_final_score(score: int, total: int, category_scores: dict) -> str:
 # イベントハンドラ
 # ============================================================
 
-def on_start(mode: str, topic: str):
+def on_start(exam: str, mode: str, topic: str):
     """開始ボタン → 出題ページに切り替え"""
-    state = init_state(mode, topic)
+    state = init_state(exam, mode, topic)
     question = get_next_question(state)
     if question is None:
         gr.Warning("問題の取得に失敗しました")
@@ -383,7 +400,7 @@ def create_app():
         with gr.Column(visible=True) as top_page:
             gr.Markdown(
                 "# 🎓 Databricks 資格試験 練習ボット\n"
-                "**Data Engineer Associate** 認定試験の練習問題を解きましょう！",
+                "対象試験を選んで、練習問題を解きましょう！",
                 elem_classes=["top-header"],
             )
             gr.Markdown(
@@ -401,14 +418,25 @@ def create_app():
                     gr.Markdown("### 📂 トピック別モード\n苦手分野を集中的に学習。\n分野を選んでトレーニング！")
 
             with gr.Row():
+                exam_selector = gr.Dropdown(
+                    choices=AVAILABLE_EXAMS,
+                    value=AVAILABLE_EXAMS[0],
+                    label="📝 対象の認定試験を選択",
+                    elem_classes=["exam-selector"]
+                )
+
+            with gr.Row():
                 mode_selector = gr.Dropdown(
                     choices=["📝 試験勉強モード", "📂 トピック別モード"],
                     value="📝 試験勉強モード",
                     label="モードを選択",
                 )
+                
+                # 初期表示のカテゴリリスト（一番目の試験のもの）
+                initial_cats = [cat["name"] for cat in SYLLABUSES.get(AVAILABLE_EXAMS[0], {"categories": []}).get("categories", [])]
                 topic_selector = gr.Dropdown(
-                    choices=EXAM_CATEGORIES,
-                    value=EXAM_CATEGORIES[0],
+                    choices=initial_cats,
+                    value=initial_cats[0] if initial_cats else None,
                     label="トピック（トピック別モード時）",
                 )
 
@@ -439,9 +467,20 @@ def create_app():
         # ============================
         # イベント接続
         # ============================
+        
+        def update_topics_for_exam(exam: str):
+            cats = [cat["name"] for cat in SYLLABUSES.get(exam, {"categories": []}).get("categories", [])]
+            return gr.Dropdown(choices=cats, value=cats[0] if cats else None)
+
+        exam_selector.change(
+            fn=update_topics_for_exam,
+            inputs=[exam_selector],
+            outputs=[topic_selector]
+        )
+
         start_btn.click(
             fn=on_start,
-            inputs=[mode_selector, topic_selector],
+            inputs=[exam_selector, mode_selector, topic_selector],
             outputs=[
                 top_page, quiz_page, result_page, state,
                 category_label, question_text, answer_radio, progress_text,

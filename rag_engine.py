@@ -45,7 +45,7 @@ if TARGET_EXAM in SYLLABUSES:
         EXAM_CATEGORIES.append(cat["name"])
         CATEGORY_WEIGHTS[cat["name"]] = cat["weight"]
 
-# 問題生成プロンプト
+# 問題生成プロンプトの共通部分
 QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問題作成者です。
 
 以下のドキュメントコンテキストに基づいて、Databricks {exam} 認定試験に出題されそうな問題を1つ作成してください。
@@ -66,8 +66,16 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
 - 解説には必ず、参考にしたドキュメントのURL（[Source URL: ...] のもの）と、そのドキュメントからの引用文を記載すること。
 
 ## 出力例（Few-Shot Example）:
-```json
-{{
+{few_shot_example}
+
+## 出力形式（JSON）:
+上記の出力例と同じ構造の JSON 形式で出力してください。JSON以外のテキストは絶対に含めないでください。
+"""
+
+# 試験別の Few-Shot サンプル
+FEW_SHOT_EXAMPLES = {
+    "Data Engineer Associate": """```json
+{
   "question": "DataFrame の書き込み操作中に Delta Lake でスキーマ展開（Schema Evolution）を有効にするには、どのオプションを使用する必要がありますか？",
   "choices": [
     "A. スキーマ展開はデフォルトで有効になっており、新しい列が自動的に追加される。",
@@ -77,12 +85,22 @@ QUESTION_GENERATION_PROMPT = """あなたは Databricks 認定資格試験の問
   ],
   "answer": "B",
   "explanation": "Delta Lake では、書き込み操作による誤ったスキーマ変更を防ぐため、スキーマ展開はデフォルトで無効になっています。DataFrame API を使用して新しい列を追加し、ターゲットテーブルのスキーマを展開する場合は、書き込みオプションとして `.option(\\"mergeSchema\\", \\"true\\")` を指定して明示的にスキーマの変更を許可する必要があります。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/delta/update-schema.html\\n**引用:** > You can explicitly allow schema evolution by specifying the option `mergeSchema` to `true`."
-}}
-```
-
-## 出力形式（JSON）:
-上記の出力例と同じ構造の JSON 形式で出力してください。JSON以外のテキストは絶対に含めないでください。
-"""
+}
+```""",
+    "Data Engineer Professional": """```json
+{
+  "question": "構造化ストリーミングにおける「stream-static join（ストリームと静的テーブルの結合）」に関して、静的 Delta テーブルのバージョンはどのように扱われますか？",
+  "choices": [
+    "A. チェックポイントディレクトリを使用して、静的 Delta テーブルへの更新が常にトラッキングされる。",
+    "B. stream-static join の各マイクロバッチは、ジョブ初期化時点での最も新しい静的 Delta テーブルのバージョンを使用する。",
+    "C. マイクロバッチごとに最新の静的 Delta テーブルが読み込まれ、変更がある場合は直ちに結合結果に反映される。",
+    "D. 一貫性の問題があるため、stream-static join では静的 Delta テーブルを使用することはできない。"
+  ],
+  "answer": "B",
+  "explanation": "stream-static join（ストリームデータと静的バッチデータの結合）では、各マイクロバッチはストリーミングジョブの初期化時点での最も新しい静的 Delta テーブルのバージョンを使用します。つまり、ストリーミングジョブが実行中である限り、静的テーブルが途中で更新されても、そのストリーミングジョブ内の各マイクロバッチには更新結果は反映されず一定のバージョンが保たれます。\\n\\n**参考ドキュメント:** https://docs.databricks.com/ja/structured-streaming/delta-lake.html\\n**引用:** > stream-static join の各マイクロバッチは、ストリームを開始した時点の静的 Delta テーブルの最新バージョンを使用します。"
+}
+```"""
+}
 
 
 class RAGEngine:
@@ -224,11 +242,15 @@ class RAGEngine:
                 context_parts.append(f"[Source URL: {doc.get('source_url', 'URL不明')}]\n{doc['content']}")
             context = "\n\n---\n\n".join(context_parts)
 
+            # 使用する Few-Shot サンプルを選択（見つからない場合は Associate をフォールバック）
+            few_shot_example = FEW_SHOT_EXAMPLES.get(exam, FEW_SHOT_EXAMPLES["Data Engineer Associate"])
+
             # LLM で問題生成
             prompt = QUESTION_GENERATION_PROMPT.format(
                 exam=exam,
                 context=context,
                 category=category or "全般",
+                few_shot_example=few_shot_example,
             )
 
             response = self.workspace_client.serving_endpoints.query(
