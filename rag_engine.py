@@ -255,27 +255,36 @@ class RAGEngine:
                 few_shot_example=few_shot_example,
             )
 
-            response = self.workspace_client.serving_endpoints.query(
-                name=self.serving_endpoint,
-                messages=[
-                    ChatMessage(
-                        role=ChatMessageRole.SYSTEM,
-                        content="あなたは Databricks 認定資格試験の問題作成エキスパートです。指定された JSON 形式で正確に出力してください。",
-                    ),
-                    ChatMessage(role=ChatMessageRole.USER, content=prompt),
-                ],
-                max_tokens=1024,
-                temperature=0.7,
-            )
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    response = self.workspace_client.serving_endpoints.query(
+                        name=self.serving_endpoint,
+                        messages=[
+                            ChatMessage(
+                                role=ChatMessageRole.SYSTEM,
+                                content="あなたは Databricks 認定資格試験の問題作成エキスパートです。ユーザーの指示に従い、必ず単一の JSON オブジェクト ({...}) のみを出力してください。挨拶、説明、前置き、後書きなどの自然言語は一切出力してはなりません。",
+                            ),
+                            ChatMessage(role=ChatMessageRole.USER, content=prompt),
+                        ],
+                        max_tokens=1024,
+                        temperature=0.7,
+                    )
 
-            # レスポンスのパース
-            response_text = response.choices[0].message.content.strip()
-            question_data = self._parse_question_response(response_text)
+                    # レスポンスのパース
+                    response_text = response.choices[0].message.content.strip()
+                    question_data = self._parse_question_response(response_text)
 
-            if question_data:
-                question_data["category"] = category
-                question_data["source"] = "ai_generated"
-                return question_data
+                    if question_data:
+                        question_data["category"] = category
+                        question_data["source"] = "ai_generated"
+                        return question_data
+                    
+                    logger.warning(f"問題データの抽出・検証に失敗しました。再試行します... ({attempt + 1}/{max_retries})")
+                except Exception as inner_e:
+                    logger.warning(f"LLM 呼び出しエラー: {inner_e}。再試行します... ({attempt + 1}/{max_retries})")
+
+            logger.error("規定のリトライ回数を超過しました。JSONを正常に生成できませんでした。")
 
         except Exception as e:
             logger.error(f"問題生成エラー: {e}")
@@ -289,19 +298,23 @@ class RAGEngine:
             return None
 
         try:
-            # マークダウンの表記揺れやテキスト混入を完全に無視するため、
-            # 正規表現は使わず、文字列中の最初の '{' から最後の '}' までを抽出する。
-            start_idx = response_text.find("{")
-            end_idx = response_text.rfind("}")
+            json_str = ""
+            # パターン1: マークダウンのコードブロックを探す
+            json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL | re.IGNORECASE)
+            if json_match:
+                json_str = json_match.group(1).strip()
+            
+            # パターン2: ブロックが無い場合や空文字の場合、最初と最後の波括弧を探す (多段フォールバック)
+            if not json_str:
+                start_idx = response_text.find("{")
+                end_idx = response_text.rfind("}")
+                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                    json_str = response_text[start_idx:end_idx + 1].strip()
 
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx + 1]
-            else:
+            if not json_str:
                 logger.error("レスポンス内に有効な JSON ({ ... }) が見つかりません。")
                 logger.error(f"レスポンス先頭500文字: {response_text[:500]}")
                 return None
-
-            json_str = json_str.strip()
             if not json_str:
                 return None
 
