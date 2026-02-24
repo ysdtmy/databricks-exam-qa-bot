@@ -95,6 +95,23 @@ CRAWL_SEEDS = {
         "https://docs.databricks.com/aws/en/delta-live-tables/expectations",
         "https://docs.databricks.com/aws/en/data-governance/",
     ],
+    "Developing Code & CI/CD": [
+        "https://docs.databricks.com/aws/en/dev-tools/bundles/",     
+        "https://docs.databricks.com/aws/en/dev-tools/ci-cd/",       
+    ],
+    "Data Sharing and Federation": [
+        "https://docs.databricks.com/aws/en/query-federation/",      
+        "https://docs.databricks.com/aws/en/data-sharing/",          
+    ],
+    "Monitoring and Alerting": [
+        "https://docs.databricks.com/aws/en/admin/system-tables/",   
+        "https://docs.databricks.com/aws/en/observability/",         
+    ],
+    "Cost & Performance Optimization": [
+        "https://docs.databricks.com/aws/en/delta/clustering",       
+        "https://docs.databricks.com/aws/en/delta/deletion-vectors", 
+        "https://docs.databricks.com/aws/en/optimizations/query-profiler", 
+    ]
 }
 
 # COMMAND ----------
