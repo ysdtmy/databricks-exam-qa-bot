@@ -284,20 +284,26 @@ class RAGEngine:
 
     def _parse_question_response(self, response_text: str) -> dict | None:
         """LLM レスポンスから問題 JSON をパース"""
+        if not response_text or not response_text.strip():
+            logger.error("LLMから空のレスポンスが返されました。")
+            return None
+
         try:
-            # { } で囲まれた部分を抽出（マークダウンの欠落や余計なテキストの混入対策）
-            # まずは ```json ... ``` を探す (json の文字は大文字小文字問わず、無くてもよい)
-            json_match = re.search(r"```(?:json)?\s*(.*?)\s*```", response_text, re.DOTALL | re.IGNORECASE)
-            if json_match:
-                json_str = json_match.group(1)
+            # マークダウンの表記揺れやテキスト混入を完全に無視するため、
+            # 正規表現は使わず、文字列中の最初の '{' から最後の '}' までを抽出する。
+            start_idx = response_text.find("{")
+            end_idx = response_text.rfind("}")
+
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                json_str = response_text[start_idx:end_idx + 1]
             else:
-                # ブロックが見つからない場合、最初に見つけた { から最後の } までを抽出
-                start_idx = response_text.find("{")
-                end_idx = response_text.rfind("}")
-                if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                    json_str = response_text[start_idx:end_idx + 1]
-                else:
-                    json_str = response_text
+                logger.error("レスポンス内に有効な JSON ({ ... }) が見つかりません。")
+                logger.error(f"レスポンス先頭500文字: {response_text[:500]}")
+                return None
+
+            json_str = json_str.strip()
+            if not json_str:
+                return None
 
             # JSONパース（生制御文字のエラーを許容するため strict=False）
             data = json.loads(json_str, strict=False)
